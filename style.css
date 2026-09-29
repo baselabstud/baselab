@@ -1,7 +1,9 @@
 
-/* =====================================================
-   BASELAB — MODERN BLUE & PURPLE DASHBOARD
-   ===================================================== */
+/* =========================================
+   BASELAB — COMPLETE RESPONSIVE STYLESHEET
+   Desktop + Tablet + Mobile
+   Slow Solar-System Animation
+   ========================================= */
 
 :root {
   --primary: #5147e8;
@@ -9,33 +11,25 @@
   --primary-light: #edeaff;
   --purple: #8256e8;
   --blue: #3678f6;
-
   --bg: #f5f7ff;
   --surface: #ffffff;
   --surface-soft: #f8f9ff;
-
   --text: #182340;
   --text-secondary: #6b7894;
   --border: #e5e9f5;
-
   --success: #12966c;
   --success-bg: #eafaf2;
   --danger: #d94258;
   --danger-bg: #fff0f2;
-
-  --shadow: 0 12px 35px rgba(39, 51, 112, 0.07);
-  --shadow-hover: 0 18px 45px rgba(39, 51, 112, 0.11);
-
+  --shadow: 0 12px 35px rgba(39, 51, 112, .07);
+  --shadow-hover: 0 18px 45px rgba(39, 51, 112, .11);
   --radius-lg: 22px;
   --radius-md: 14px;
   --radius-sm: 10px;
-
   --sidebar-width: 262px;
 }
 
-/* =====================================================
-   GLOBAL RESET
-   ===================================================== */
+/* GLOBAL */
 
 * {
   box-sizing: border-box;
@@ -67,36 +61,30 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.45;
+  opacity: .45;
 }
 
 [hidden] {
   display: none !important;
 }
 
-h1,
-h2,
-h3,
-p {
+h1, h2, h3, p {
   margin-top: 0;
 }
 
-h1,
-h2,
-h3 {
+h1, h2, h3 {
   font-family: "Space Grotesk", sans-serif;
 }
 
 button:focus-visible,
 input:focus-visible,
-select:focus-visible {
-  outline: 3px solid rgba(81, 71, 232, 0.28);
+select:focus-visible,
+.reference-item:focus-visible {
+  outline: 3px solid rgba(81, 71, 232, .28);
   outline-offset: 3px;
 }
 
-/* =====================================================
-   DASHBOARD SHELL
-   ===================================================== */
+/* DASHBOARD */
 
 .dashboard-shell {
   min-height: 100vh;
@@ -106,16 +94,12 @@ select:focus-visible {
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 20;
-
   display: flex;
   flex-direction: column;
-
   width: var(--sidebar-width);
   padding: 28px 17px 20px;
-
-  background: #ffffff;
+  background: white;
   border-right: 1px solid var(--border);
-
   overflow-y: auto;
 }
 
@@ -131,36 +115,28 @@ select:focus-visible {
   padding: 34px 38px 24px;
 }
 
-/* =====================================================
-   SIDEBAR BRAND
-   ===================================================== */
+/* BRAND */
 
 .sidebar-brand {
   display: flex;
   align-items: center;
   gap: 12px;
-
   padding: 4px 10px 32px;
 }
 
 .brand-icon {
   display: grid;
   place-items: center;
-
   width: 47px;
   height: 47px;
   flex-shrink: 0;
-
   border-radius: 15px;
-
   background: linear-gradient(135deg, #6255f5, #9869f4);
-  color: #ffffff;
-
+  color: white;
   font-family: "Space Grotesk", sans-serif;
   font-size: 25px;
   font-weight: 700;
-
-  box-shadow: 0 7px 18px rgba(81, 71, 232, 0.22);
+  box-shadow: 0 7px 18px rgba(81, 71, 232, .22);
 }
 
 .brand-icon span {
@@ -177,7 +153,7 @@ select:focus-visible {
   color: var(--text);
   font-family: "Space Grotesk", sans-serif;
   font-size: 21px;
-  letter-spacing: -0.7px;
+  letter-spacing: -.7px;
 }
 
 .brand-text small {
@@ -187,14 +163,11 @@ select:focus-visible {
   letter-spacing: 1.1px;
 }
 
-/* =====================================================
-   SIDEBAR NAVIGATION
-   ===================================================== */
+/* SIDEBAR NAVIGATION */
 
 .sidebar-section-label {
   padding: 0 15px;
   margin-bottom: 12px;
-
   color: #a0aac0;
   font-size: 10px;
   font-weight: 800;
@@ -211,23 +184,15 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
-
   width: 100%;
   padding: 13px 15px;
-
   border: 1px solid transparent;
   border-radius: 12px;
-
   background: transparent;
   color: #68758f;
-
   font-weight: 700;
   text-align: left;
-
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
+  transition: background .2s, color .2s, transform .2s;
 }
 
 .nav-item:hover {
@@ -239,19 +204,16 @@ select:focus-visible {
 .nav-item.active {
   background: linear-gradient(100deg, #eeedff, #f6f3ff);
   color: var(--primary);
-
   border-color: #e4e0ff;
 }
 
 .nav-icon {
   display: grid;
   place-items: center;
-
   width: 29px;
   height: 29px;
-
+  flex-shrink: 0;
   border-radius: 9px;
-
   background: #f0f2fb;
   font-size: 18px;
 }
@@ -266,9 +228,7 @@ select:focus-visible {
   background: var(--border);
 }
 
-/* =====================================================
-   QUICK REFERENCE
-   ===================================================== */
+/* QUICK REFERENCE */
 
 .base-reference {
   display: flex;
@@ -280,11 +240,10 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 11px;
-
+  min-width: 0;
   padding: 10px 13px;
   border-radius: 12px;
-
-  transition: background 0.2s ease;
+  transition: background .2s;
 }
 
 .reference-item:hover {
@@ -294,15 +253,12 @@ select:focus-visible {
 .reference-symbol {
   display: grid;
   place-items: center;
-
   width: 35px;
   height: 35px;
-
+  flex-shrink: 0;
   border-radius: 10px;
-
   background: #f0efff;
   color: var(--primary);
-
   font-family: "Space Grotesk", sans-serif;
   font-size: 12px;
   font-weight: 700;
@@ -311,6 +267,7 @@ select:focus-visible {
 .reference-item div {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   line-height: 1.4;
 }
 
@@ -324,9 +281,115 @@ select:focus-visible {
   font-size: 11px;
 }
 
-/* =====================================================
-   SIDEBAR BOTTOM
-   ===================================================== */
+/* INTERACTIVE QUICK REFERENCE */
+
+.base-reference .reference-button {
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.base-reference .reference-button:hover,
+.base-reference .reference-button[aria-expanded="true"] {
+  background: #f2f0ff;
+  border-color: #e2ddff;
+}
+
+.reference-label {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  line-height: 1.4;
+}
+
+.reference-label strong {
+  color: #35405b;
+  font-size: 12px;
+}
+
+.reference-label small {
+  color: #9aa4ba;
+  font-size: 11px;
+}
+
+.reference-arrow {
+  margin-left: auto;
+  color: #5147e8;
+  font-size: 20px;
+  transition: transform .2s ease;
+}
+
+.reference-button[aria-expanded="true"] .reference-arrow {
+  transform: rotate(90deg);
+}
+
+.reference-details {
+  padding: 15px;
+  margin-top: 8px;
+  border: 1px solid #e4e1ff;
+  border-radius: 13px;
+  background: #f7f6ff;
+  color: #35405b;
+  font-size: 11px;
+}
+
+.reference-details[hidden] {
+  display: none !important;
+}
+
+.reference-details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.reference-details-header strong {
+  color: #5147e8;
+  font-size: 13px;
+}
+
+#referenceClose {
+  border: none;
+  background: transparent;
+  color: #5147e8;
+  font-size: 21px;
+  cursor: pointer;
+}
+
+.reference-details p {
+  margin: 9px 0;
+  line-height: 1.7;
+}
+
+.reference-example {
+  margin-top: 12px;
+  padding: 11px;
+  border-radius: 9px;
+  background: #eae7ff;
+}
+
+.reference-example small {
+  display: block;
+  color: #7565cc;
+  font-weight: 700;
+}
+
+.reference-example strong {
+  display: block;
+  margin-top: 5px;
+  color: #4035aa;
+  font-size: 13px;
+}
+
+.reference-example p {
+  margin-bottom: 0;
+}
+
+/* SIDEBAR BOTTOM */
 
 .sidebar-bottom {
   margin-top: auto;
@@ -335,17 +398,14 @@ select:focus-visible {
 
 .sidebar-info-card {
   padding: 18px 16px;
-
   border: 1px solid #e4e1ff;
   border-radius: 15px;
-
   background: linear-gradient(140deg, #f3f1ff, #f9f7ff);
 }
 
 .info-icon {
   display: block;
   margin-bottom: 8px;
-
   color: var(--primary);
   font-size: 23px;
 }
@@ -353,13 +413,11 @@ select:focus-visible {
 .sidebar-info-card strong {
   display: block;
   margin-bottom: 6px;
-
   font-size: 12px;
 }
 
 .sidebar-info-card p {
   margin-bottom: 0;
-
   color: var(--text-secondary);
   font-size: 11px;
   line-height: 1.65;
@@ -369,10 +427,8 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 8px;
-
   margin-top: 21px;
   padding-left: 10px;
-
   color: #8994aa;
   font-size: 11px;
 }
@@ -380,30 +436,23 @@ select:focus-visible {
 .status-dot {
   display: inline-block;
   flex-shrink: 0;
-
   width: 7px;
   height: 7px;
-
   border-radius: 50%;
   background: #26bf91;
-
-  box-shadow: 0 0 0 3px rgba(38, 191, 145, 0.11);
+  box-shadow: 0 0 0 3px rgba(38, 191, 145, .11);
 }
 
-/* =====================================================
-   TOP BAR
-   ===================================================== */
+/* TOPBAR */
 
 .topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-
   min-height: 72px;
   padding: 0 38px;
-
-  background: rgba(255, 255, 255, 0.87);
+  background: rgba(255, 255, 255, .87);
   border-bottom: 1px solid var(--border);
 }
 
@@ -433,87 +482,67 @@ select:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-
   padding: 8px 12px;
-
   border: 1px solid #e6eaf4;
   border-radius: 30px;
-
   background: #f8faff;
   color: #66748f;
-
   font-size: 11px;
   font-weight: 700;
 }
 
-/* =====================================================
-   HERO
-   ===================================================== */
+/* HERO */
 
 .hero {
   position: relative;
   display: flex;
   align-items: center;
-
   min-height: 256px;
   padding: 35px 40px;
   margin-bottom: 24px;
-
   overflow: hidden;
-
   border-radius: var(--radius-lg);
-
   background: linear-gradient(
     115deg,
     #3734b9 0%,
     #5149dc 43%,
     #8c60ef 100%
   );
-
-  color: #ffffff;
-
-  box-shadow: 0 15px 30px rgba(74, 66, 190, 0.16);
+  color: white;
+  box-shadow: 0 15px 30px rgba(74, 66, 190, .16);
 }
 
 .hero::before {
   content: "";
   position: absolute;
-
   width: 340px;
   height: 340px;
-
   right: -80px;
   top: -170px;
-
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, .055);
 }
 
 .hero::after {
   content: "";
   position: absolute;
-
   width: 230px;
   height: 230px;
-
   right: 100px;
   bottom: -170px;
-
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(255, 255, 255, .045);
 }
 
 .hero-content {
   position: relative;
   z-index: 2;
-
   max-width: 630px;
 }
 
 .hero-eyebrow {
   display: inline-block;
   margin-bottom: 13px;
-
   color: #ddd9ff;
   font-size: 10px;
   font-weight: 800;
@@ -522,7 +551,6 @@ select:focus-visible {
 
 .hero h1 {
   margin-bottom: 12px;
-
   font-size: clamp(27px, 3vw, 39px);
   font-weight: 700;
   letter-spacing: -1.4px;
@@ -537,7 +565,6 @@ select:focus-visible {
 .hero p {
   max-width: 495px;
   margin-bottom: 22px;
-
   color: #e5e4ff;
   font-size: 13px;
   line-height: 1.8;
@@ -551,119 +578,121 @@ select:focus-visible {
 
 .hero-features span {
   padding: 7px 11px;
-
-  border: 1px solid rgba(255, 255, 255, 0.19);
+  border: 1px solid rgba(255, 255, 255, .19);
   border-radius: 8px;
-
-  background: rgba(255, 255, 255, 0.09);
-
-  color: #ffffff;
+  background: rgba(255, 255, 255, .09);
+  color: white;
   font-size: 10px;
   font-weight: 700;
 }
 
-/* Hero decoration */
+/* =========================================
+   SOLAR SYSTEM — SLOW ORBIT ANIMATION
+   ========================================= */
 
 .hero-decoration {
   position: absolute;
   inset: 0 0 0 auto;
-
   width: 36%;
+  height: 100%;
   pointer-events: none;
+  overflow: visible;
 }
 
 .hero-orbit {
   position: absolute;
-
+  display: block;
   top: 50%;
   left: 55%;
-
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, .25);
   border-radius: 50%;
-
   transform: translate(-50%, -50%);
 }
 
-.orbit-one {
-  width: 205px;
-  height: 205px;
+.hero-orbit.orbit-one {
+  width: 180px;
+  height: 180px;
 }
 
-.orbit-two {
-  width: 290px;
-  height: 290px;
+.hero-orbit.orbit-two {
+  width: 250px;
+  height: 250px;
 }
 
 .hero-center-symbol {
   position: absolute;
-
   top: 50%;
   left: 55%;
-
-  color: rgba(255, 255, 255, 0.25);
-
+  z-index: 1;
+  color: rgba(255, 255, 255, .25);
   font-size: 125px;
   font-weight: 700;
-
   transform: translate(-50%, -50%);
 }
 
 .floating-number {
   position: absolute;
-  z-index: 2;
-
+  top: 50%;
+  left: 55%;
+  z-index: 3;
   padding: 9px 13px;
-
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, .2);
   border-radius: 11px;
-
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, .12);
   backdrop-filter: blur(8px);
-
-  color: #ffffff;
+  color: white;
   font-family: "Space Grotesk", sans-serif;
   font-size: 13px;
   font-weight: 700;
-
-  animation: float 5s ease-in-out infinite;
+  white-space: nowrap;
+  will-change: transform;
 }
 
-.number-one {
-  top: 23%;
-  right: 25%;
+/* Inner orbit — 90 seconds */
+.floating-number.number-one {
+  --orbit-radius: 90px;
+  animation: solarOrbit 90s linear infinite;
+  animation-delay: -15s;
 }
 
-.number-two {
-  bottom: 21%;
-  right: 8%;
-  animation-delay: -2s;
+/* Outer orbit — 120 seconds */
+.floating-number.number-two {
+  --orbit-radius: 125px;
+  animation: solarOrbit 120s linear infinite;
+  animation-delay: -60s;
 }
 
-.number-three {
-  bottom: 30%;
-  left: 2%;
-  animation-delay: -3s;
+/* Outer orbit — 120 seconds, different position */
+.floating-number.number-three {
+  --orbit-radius: 125px;
+  animation: solarOrbit 120s linear infinite;
+  animation-delay: -20s;
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
+@keyframes solarOrbit {
+  from {
+    transform:
+      translate(-50%, -50%)
+      rotate(0deg)
+      translateX(var(--orbit-radius))
+      rotate(0deg);
   }
 
-  50% {
-    transform: translateY(-10px);
+  to {
+    transform:
+      translate(-50%, -50%)
+      rotate(360deg)
+      translateX(var(--orbit-radius))
+      rotate(-360deg);
   }
 }
 
-/* =====================================================
-   STATS CARDS
-   ===================================================== */
+/* STATS */
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 17px;
-
   margin-bottom: 26px;
 }
 
@@ -671,19 +700,13 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 14px;
-
   min-width: 0;
   padding: 20px;
-
   border: 1px solid var(--border);
   border-radius: 17px;
-
-  background: #ffffff;
+  background: white;
   box-shadow: var(--shadow);
-
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: transform .2s, box-shadow .2s;
 }
 
 .stat-card:hover {
@@ -694,13 +717,10 @@ select:focus-visible {
 .stat-icon {
   display: grid;
   place-items: center;
-
   width: 48px;
   height: 48px;
   flex-shrink: 0;
-
   border-radius: 14px;
-
   font-size: 23px;
   font-weight: 700;
 }
@@ -727,7 +747,6 @@ select:focus-visible {
 
 .stat-value {
   color: #1e2947;
-
   font-family: "Space Grotesk", sans-serif;
   font-size: 24px;
   font-weight: 700;
@@ -736,15 +755,12 @@ select:focus-visible {
 
 .stat-label {
   margin-top: 4px;
-
   color: #8b96ae;
   font-size: 11px;
   font-weight: 600;
 }
 
-/* =====================================================
-   WORKSPACE CARDS
-   ===================================================== */
+/* WORKSPACE */
 
 .tab-content {
   display: none;
@@ -752,17 +768,15 @@ select:focus-visible {
 
 .tab-content.active {
   display: block;
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn .3s ease;
 }
 
 .workspace-card,
 .result-card,
 .solution-card {
   margin-bottom: 24px;
-
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-
   background: var(--surface);
   box-shadow: var(--shadow);
 }
@@ -772,9 +786,7 @@ select:focus-visible {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-
   padding: 27px 30px;
-
   border-bottom: 1px solid var(--border);
 }
 
@@ -782,21 +794,18 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 15px;
+  min-width: 0;
 }
 
 .section-icon {
   display: grid;
   place-items: center;
-
   width: 49px;
   height: 49px;
   flex-shrink: 0;
-
   border-radius: 14px;
-
   background: linear-gradient(135deg, #e9e6ff, #f4efff);
   color: var(--primary);
-
   font-size: 25px;
   font-weight: 700;
 }
@@ -804,7 +813,6 @@ select:focus-visible {
 .section-eyebrow {
   display: block;
   margin-bottom: 5px;
-
   color: #8b83da;
   font-size: 10px;
   font-weight: 800;
@@ -815,30 +823,25 @@ select:focus-visible {
 .result-header h2,
 .solution-heading h2 {
   margin-bottom: 5px;
-
   color: #1d2947;
   font-size: 21px;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: -.5px;
 }
 
 .workspace-heading p,
 .solution-heading p {
   margin-bottom: 0;
-
   color: var(--text-secondary);
   font-size: 12px;
 }
 
 .workspace-tag {
   padding: 7px 12px;
-
   border: 1px solid #e9e5ff;
   border-radius: 30px;
-
   background: #f6f3ff;
   color: var(--primary);
-
   font-size: 10px;
   font-weight: 800;
 }
@@ -847,15 +850,12 @@ select:focus-visible {
   padding: 29px 30px 32px;
 }
 
-/* =====================================================
-   FORM INPUTS
-   ===================================================== */
+/* INPUTS */
 
 .input-group {
   display: flex;
   flex-direction: column;
   gap: 9px;
-
   min-width: 0;
 }
 
@@ -870,24 +870,15 @@ select:focus-visible {
   width: 100%;
   min-width: 0;
   height: 50px;
-
   padding: 0 15px;
-
   border: 1px solid #dfe5f2;
   border-radius: 11px;
-
   background: #fbfcff;
   color: #283452;
-
   font-size: 13px;
   font-weight: 600;
-
   outline: none;
-
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    background 0.2s ease;
+  transition: border-color .2s, box-shadow .2s, background .2s;
 }
 
 .input-group input::placeholder {
@@ -898,10 +889,8 @@ select:focus-visible {
 .input-group input:focus,
 .input-group select:focus {
   border-color: #8175f0;
-
-  background: #ffffff;
-
-  box-shadow: 0 0 0 4px rgba(105, 90, 235, 0.10);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(105, 90, 235, .10);
 }
 
 .input-group select {
@@ -920,11 +909,9 @@ select:focus-visible {
   position: absolute;
   top: 50%;
   left: 16px;
-
   color: #8d86db;
   font-size: 20px;
   font-weight: 700;
-
   transform: translateY(-50%);
 }
 
@@ -938,17 +925,14 @@ select:focus-visible {
   grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
   align-items: end;
   gap: 15px;
-
   margin-top: 23px;
 }
 
 .base-direction-icon {
   display: grid;
   place-items: center;
-
   width: 44px;
   height: 50px;
-
   color: var(--primary);
   font-size: 22px;
   font-weight: 700;
@@ -969,15 +953,12 @@ select:focus-visible {
   margin-top: 23px;
 }
 
-/* =====================================================
-   BUTTONS
-   ===================================================== */
+/* BUTTONS */
 
 .button-group {
   display: flex;
   flex-wrap: wrap;
   gap: 11px;
-
   margin-top: 29px;
 }
 
@@ -988,47 +969,35 @@ select:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 9px;
-
   min-height: 46px;
   padding: 12px 20px;
-
   border-radius: 11px;
-
   font-size: 12px;
   font-weight: 800;
-
-  transition:
-    transform 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
+  transition: transform .2s, background .2s,
+              box-shadow .2s, border-color .2s;
 }
 
 .primary-btn {
   border: 1px solid transparent;
-
   background: linear-gradient(110deg, #5147e8, #7558ed);
-  color: #ffffff;
-
-  box-shadow: 0 7px 15px rgba(81, 71, 232, 0.18);
+  color: white;
+  box-shadow: 0 7px 15px rgba(81, 71, 232, .18);
 }
 
 .primary-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-
-  box-shadow: 0 10px 22px rgba(81, 71, 232, 0.25);
+  box-shadow: 0 10px 22px rgba(81, 71, 232, .25);
 }
 
 .secondary-btn {
   border: 1px solid #e3e7f4;
-
   background: #f7f8ff;
   color: #495674;
 }
 
 .secondary-btn:hover:not(:disabled) {
   border-color: #d2ccff;
-
   background: #eeecff;
   color: var(--primary);
 }
@@ -1042,28 +1011,21 @@ select:focus-visible {
   min-width: 105px;
 }
 
-/* =====================================================
-   ERROR MESSAGE
-   ===================================================== */
+/* ERROR */
 
 .error-message {
   padding: 16px 19px;
   margin-bottom: 24px;
-
   border: 1px solid #ffd1da;
   border-left: 4px solid var(--danger);
   border-radius: 13px;
-
   background: var(--danger-bg);
   color: #b42b45;
-
   font-size: 12px;
   font-weight: 600;
 }
 
-/* =====================================================
-   RESULT CARD
-   ===================================================== */
+/* RESULT */
 
 .result-card {
   padding: 28px 30px;
@@ -1075,7 +1037,6 @@ select:focus-visible {
   justify-content: space-between;
   align-items: center;
   gap: 15px;
-
   margin-bottom: 22px;
 }
 
@@ -1089,17 +1050,14 @@ select:focus-visible {
 
 .result-display {
   padding: 20px 23px;
-
   border: 1px solid #e5e1ff;
   border-radius: 14px;
-
   background: linear-gradient(120deg, #f5f3ff, #f8f7ff);
 }
 
 .result-display-label {
   display: block;
   margin-bottom: 9px;
-
   color: #9188c6;
   font-size: 10px;
   font-weight: 800;
@@ -1109,28 +1067,23 @@ select:focus-visible {
 .result-number {
   overflow-wrap: anywhere;
   word-break: break-word;
-
   color: var(--primary);
-
   font-family: "Space Grotesk", monospace;
   font-size: clamp(20px, 3vw, 30px);
   font-weight: 700;
-  letter-spacing: -0.7px;
+  letter-spacing: -.7px;
   line-height: 1.5;
 }
 
 .result-note {
   margin: 13px 0 20px;
-
   color: #8995ad;
   font-size: 11px;
 }
 
 .solution-btn {
   width: 100%;
-
   border: 1px solid #e8e5ff;
-
   background: #f0efff;
   color: var(--primary);
 }
@@ -1139,9 +1092,7 @@ select:focus-visible {
   background: #e5e1ff;
 }
 
-/* =====================================================
-   SOLUTION CARD
-   ===================================================== */
+/* SOLUTION */
 
 .solution-card {
   padding: 30px;
@@ -1152,21 +1103,16 @@ select:focus-visible {
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-
   margin-bottom: 27px;
 }
 
 .solution-badge {
   flex-shrink: 0;
-
   padding: 7px 12px;
-
   border: 1px solid #c9f0e0;
   border-radius: 30px;
-
   background: #eafaf2;
   color: #13875f;
-
   font-size: 10px;
   font-weight: 800;
 }
@@ -1175,9 +1121,7 @@ select:focus-visible {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-
   margin-bottom: 11px;
-
   color: #6c7896;
   font-size: 11px;
   font-weight: 700;
@@ -1186,9 +1130,7 @@ select:focus-visible {
 .solution-progress {
   height: 8px;
   margin-bottom: 25px;
-
   overflow: hidden;
-
   border-radius: 30px;
   background: #e9eafd;
 }
@@ -1196,36 +1138,23 @@ select:focus-visible {
 .solution-progress-fill {
   width: 0;
   height: 100%;
-
   border-radius: inherit;
-
-  background: linear-gradient(
-    90deg,
-    #5147e8,
-    #9984f8
-  );
-
-  transition: width 0.4s ease;
+  background: linear-gradient(90deg, #5147e8, #9984f8);
+  transition: width .4s ease;
 }
 
-/* =====================================================
-   SOLUTION STEP CONTENT
-   ===================================================== */
+/* SOLUTION STEPS */
 
 .solution-step {
   padding: 25px 23px;
-
   border: 1px solid #e1e4fa;
   border-radius: 15px;
-
   background: #fafaff;
-
-  animation: stepAppear 0.35s ease;
+  animation: stepAppear .35s ease;
 }
 
 .solution-step h3 {
   margin-bottom: 13px;
-
   color: #3d39b9;
   font-size: 17px;
   font-weight: 700;
@@ -1233,39 +1162,31 @@ select:focus-visible {
 
 .solution-description {
   margin-bottom: 17px;
-
   color: #6b7896;
   font-size: 12px;
 }
 
 .solution-step > p:not(.solution-description) {
   margin-bottom: 9px;
-
   color: #35415e;
   font-size: 12px;
   line-height: 1.8;
 }
 
-/* =====================================================
-   SOLUTION TABLES
-   ===================================================== */
+/* SOLUTION TABLES */
 
 .solution-table-wrapper {
   width: 100%;
   margin: 15px 0;
-
   overflow-x: auto;
-
   border: 1px solid #dedff7;
   border-radius: 12px;
-
-  background: #ffffff;
+  background: white;
 }
 
 .solution-table {
   width: 100%;
   border-collapse: collapse;
-
   font-size: 12px;
   text-align: center;
 }
@@ -1276,7 +1197,6 @@ select:focus-visible {
 
 .solution-table th {
   padding: 14px 12px;
-
   color: #3736b1;
   font-weight: 800;
   white-space: nowrap;
@@ -1284,9 +1204,7 @@ select:focus-visible {
 
 .solution-table td {
   padding: 13px 12px;
-
   border-top: 1px solid #e8eafa;
-
   color: #455170;
   vertical-align: middle;
 }
@@ -1307,39 +1225,30 @@ select:focus-visible {
 .solution-table .repeated-remainder {
   background: #fff0d6 !important;
   color: #b45309 !important;
-
   border: 2px solid #f59e0b !important;
-
   font-weight: 800 !important;
 }
 
-/* =====================================================
-   SOLUTION HIGHLIGHTS
-   ===================================================== */
+/* HIGHLIGHTS */
 
 .solution-highlight {
   margin-top: 17px;
   padding: 17px 19px;
-
   border-left: 4px solid var(--primary);
   border-radius: 12px;
-
   background: #efefff;
 }
 
 .solution-highlight p {
   margin: 0;
-
   color: #34406c;
   font-size: 12px;
   line-height: 1.9;
-
   overflow-wrap: anywhere;
 }
 
 .step-note {
   margin-top: 11px;
-
   color: #8c97ae;
   font-size: 11px;
 }
@@ -1347,30 +1256,21 @@ select:focus-visible {
 .final-answer {
   margin-top: 16px;
   padding: 21px;
-
   border: 1px solid #bcebd6;
   border-radius: 13px;
-
   background: #eafaf3;
   color: #107a58;
-
   font-family: "Space Grotesk", monospace;
   font-size: clamp(15px, 2vw, 19px);
   font-weight: 700;
-
   line-height: 1.8;
   overflow-wrap: anywhere;
 }
-
-/* =====================================================
-   SOLUTION CONTROLS
-   ===================================================== */
 
 .solution-controls {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-
   margin-top: 24px;
 }
 
@@ -1379,18 +1279,14 @@ select:focus-visible {
   min-width: 105px;
 }
 
-/* =====================================================
-   FOOTER
-   ===================================================== */
+/* FOOTER */
 
 .dashboard-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-
   padding: 15px 4px 5px;
-
   color: #9ca6bb;
   font-size: 11px;
 }
@@ -1399,9 +1295,7 @@ select:focus-visible {
   margin: 0;
 }
 
-/* =====================================================
-   ANIMATIONS
-   ===================================================== */
+/* ANIMATIONS */
 
 @keyframes fadeIn {
   from {
@@ -1427,9 +1321,9 @@ select:focus-visible {
   }
 }
 
-/* =====================================================
-   TABLET LAYOUT
-   ===================================================== */
+/* =========================================
+   TABLET — UP TO 1100px
+   ========================================= */
 
 @media (max-width: 1100px) {
   :root {
@@ -1449,7 +1343,7 @@ select:focus-visible {
   }
 
   .hero-decoration {
-    opacity: 0.55;
+    opacity: .75;
   }
 
   .stat-card {
@@ -1466,95 +1360,151 @@ select:focus-visible {
   }
 }
 
-/* =====================================================
-   MOBILE LAYOUT
-   ===================================================== */
+/* =========================================
+   MOBILE — UP TO 760px
+   ========================================= */
 
 @media (max-width: 760px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
   .dashboard-shell {
     display: block;
   }
 
+  /* Navigation across the top */
+
   .sidebar {
     position: relative;
     inset: auto;
-
     width: 100%;
-    padding: 15px 17px;
-
-    border-right: none;
+    padding: 16px;
+    border-right: 0;
     border-bottom: 1px solid var(--border);
-
     overflow: visible;
   }
 
   .sidebar-brand {
-    padding: 0 0 15px;
+    padding: 0 0 16px;
   }
 
   .brand-icon {
-    width: 40px;
-    height: 40px;
+    width: 43px;
+    height: 43px;
   }
 
   .brand-text strong {
-    font-size: 19px;
-  }
-
-  .sidebar > .sidebar-section-label,
-  .sidebar-divider,
-  .base-reference,
-  .sidebar-bottom {
-    display: none;
+    font-size: 20px;
   }
 
   .sidebar-nav {
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 9px;
   }
 
   .nav-item {
-    flex: 1;
+    min-width: 0;
     justify-content: center;
-    gap: 7px;
-
-    padding: 11px 9px;
-
-    font-size: 11px;
+    gap: 8px;
+    padding: 11px 8px;
+    font-size: 12px;
     text-align: center;
   }
 
   .nav-icon {
-    width: 25px;
-    height: 25px;
-    font-size: 15px;
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
   }
 
+  /* Quick Reference stays available */
+
+  .sidebar-divider {
+    display: block;
+    margin: 17px 0;
+  }
+
+  .sidebar > .sidebar-section-label {
+    display: block;
+    padding: 0 4px;
+    margin-bottom: 9px;
+  }
+
+  .base-reference {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .reference-item {
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--border);
+    background: #fff;
+  }
+
+  .reference-item strong {
+    font-size: 11px;
+  }
+
+  .reference-item small {
+    font-size: 10px;
+  }
+
+  .reference-details {
+    grid-column: 1 / -1;
+  }
+
+  .sidebar-bottom {
+    display: none;
+  }
+
+  /* Main area */
+
   .dashboard-main {
+    width: 100%;
+    min-width: 0;
     margin-left: 0;
   }
 
   .topbar {
     min-height: 54px;
-    padding: 0 18px;
+    padding: 0 16px;
   }
 
   .dashboard-content {
-    padding: 19px 15px;
+    width: 100%;
+    padding: 19px 15px 28px;
   }
 
+  /* Hero banner */
+
   .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     min-height: 0;
-    padding: 27px 24px;
-    margin-bottom: 17px;
+    padding: 28px 23px 20px;
+    margin-bottom: 18px;
+    overflow: hidden;
+  }
+
+  .hero-content {
+    width: 100%;
+    max-width: 100%;
   }
 
   .hero h1 {
-    font-size: 29px;
+    font-size: clamp(25px, 7vw, 34px);
   }
 
-  .hero-decoration {
-    display: none;
+  .hero p {
+    max-width: 100%;
+    font-size: 12px;
   }
 
   .hero-features {
@@ -1562,273 +1512,282 @@ select:focus-visible {
   }
 
   .hero-features span {
-    font-size: 9px;
+    padding: 7px 9px;
+    font-size: 10px;
   }
 
+  /* Solar system moves BELOW the text */
+
+  .hero-decoration {
+    position: relative;
+    display: block;
+    flex: none;
+    inset: auto;
+    width: 100%;
+    height: 235px;
+    margin-top: 12px;
+    opacity: 1;
+    overflow: visible;
+  }
+
+  .hero-orbit,
+  .hero-center-symbol,
+  .floating-number {
+    top: 50%;
+    left: 50%;
+  }
+
+  .hero-orbit.orbit-one {
+    width: 135px;
+    height: 135px;
+  }
+
+  .hero-orbit.orbit-two {
+    width: 205px;
+    height: 205px;
+  }
+
+  .hero-center-symbol {
+    font-size: 90px;
+  }
+
+  .floating-number {
+    padding: 6px 9px;
+    font-size: 10px;
+  }
+
+  .floating-number.number-one {
+    --orbit-radius: 67.5px;
+  }
+
+  .floating-number.number-two,
+  .floating-number.number-three {
+    --orbit-radius: 102.5px;
+  }
+
+  /* Statistics stack vertically */
+
   .stats-grid {
-    gap: 10px;
-    margin-bottom: 18px;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
   }
 
   .stat-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-
-    padding: 14px 12px;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    padding: 17px;
   }
 
   .stat-icon {
-    width: 37px;
-    height: 37px;
-    font-size: 19px;
+    width: 46px;
+    height: 46px;
+    font-size: 22px;
   }
 
   .stat-value {
-    font-size: 20px;
+    font-size: 23px;
   }
 
-  .stat-label {
-    font-size: 10px;
+  /* Workspace cards */
+
+  .workspace-card,
+  .result-card,
+  .solution-card {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .workspace-header,
   .workspace-body,
   .result-card,
   .solution-card {
-    padding: 22px 19px;
+    padding: 20px 16px;
+  }
+
+  .workspace-heading {
+    min-width: 0;
   }
 
   .workspace-heading h2,
   .result-header h2,
   .solution-heading h2 {
-    font-size: 19px;
+    font-size: 18px;
   }
 
   .workspace-tag {
     display: none;
   }
 
+  /* Converter */
+
+  .base-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .base-direction-icon {
+    width: 100%;
+    height: 28px;
+    transform: rotate(90deg);
+  }
+
+  /* Calculator */
+
+  .calculator-input-grid,
+  .calculator-settings {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  /* Inputs: prevent iPhone auto-zoom */
+
+  .input-group input,
+  .input-group select {
+    width: 100%;
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  /* Buttons */
+
   .button-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 9px;
   }
 
   .button-group .primary-btn {
-    flex-basis: 100%;
+    grid-column: 1 / -1;
+    min-width: 0;
   }
 
   .button-group .secondary-btn {
-    flex: 1;
+    min-width: 0;
+  }
+
+  /* Results */
+
+  .result-header {
+    flex-wrap: wrap;
+  }
+
+  .result-display {
+    padding: 17px 14px;
+  }
+
+  .result-number {
+    font-size: 20px;
+    overflow-wrap: anywhere;
+  }
+
+  /* Solutions */
+
+  .solution-heading {
+    flex-direction: column;
   }
 
   .solution-step {
-    padding: 20px 15px;
+    padding: 17px 13px;
+  }
+
+  .solution-table-wrapper {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .solution-controls {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
   }
 
   .solution-controls button {
     min-width: 0;
   }
 
+  /* Footer */
+
   .dashboard-footer {
     flex-direction: column;
+    align-items: center;
     gap: 5px;
     text-align: center;
   }
 }
 
-/* =====================================================
-   SMALL PHONES
-   ===================================================== */
+/* =========================================
+   SMALL PHONES — UP TO 380px
+   ========================================= */
 
-@media (max-width: 460px) {
-  .topbar-badge {
-    display: none;
+@media (max-width: 380px) {
+  .dashboard-content {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .sidebar {
+    padding: 13px 10px;
+  }
+
+  .nav-item {
+    font-size: 11px;
+  }
+
+  .reference-item {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .reference-symbol {
+    width: 30px;
+    height: 30px;
+  }
+
+  .hero {
+    padding: 23px 16px 18px;
   }
 
   .hero h1 {
-    font-size: 25px;
+    font-size: 24px;
   }
 
-  .hero p {
-    font-size: 12px;
+  .hero-decoration {
+    height: 220px;
   }
 
-  .stats-grid {
-    grid-template-columns: 1fr;
+  .hero-orbit.orbit-two {
+    width: 180px;
+    height: 180px;
   }
 
-  .stat-card {
-    flex-direction: row;
-    align-items: center;
+  .floating-number.number-two,
+  .floating-number.number-three {
+    --orbit-radius: 90px;
   }
 
-  .base-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 11px;
-  }
-
-  .base-direction-icon {
-    width: 100%;
-    height: 25px;
-    transform: rotate(90deg);
-  }
-
-  .calculator-input-grid,
-  .calculator-settings {
-    grid-template-columns: 1fr;
-  }
-
-  .workspace-heading {
-    align-items: flex-start;
-  }
-
-  .section-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
-  }
-
-  .solution-heading {
-    flex-direction: column;
-  }
-
-  .solution-table {
-    min-width: 480px;
-  }
-
-  .result-number {
-    font-size: 20px;
+  .workspace-header,
+  .workspace-body,
+  .result-card,
+  .solution-card {
+    padding: 18px 13px;
   }
 }
 
-/* =====================================================
-   REDUCED MOTION ACCESSIBILITY
-   ===================================================== */
+/* ACCESSIBILITY */
 
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
+    animation-duration: 45s !important;
+    transition-duration: 45s !important;
     scroll-behavior: auto !important;
   }
-}
 
-/* ============================================
-   BASELAB — SOLAR SYSTEM ORBIT ANIMATION
-   ============================================ */
-
-/* Container for the entire solar system */
-.hero-decoration {
-  position: absolute;
-  inset: 0 0 0 auto;
-  width: 36%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
-  animation: none !important;
-}
-
-/* Two visible circular orbit paths */
-.hero-orbit {
-  position: absolute;
-  top: 50%;
-  left: 55%;
-  display: block !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
-  border-radius: 50%;
-  transform: translate(-50%, -50%) !important;
-  animation: none !important;
-}
-
-/* Inner orbit */
-.hero-orbit.orbit-one,
-.orbit-one {
-  width: 180px;
-  height: 180px;
-}
-
-/* Outer orbit */
-.hero-orbit.orbit-two,
-.orbit-two {
-  width: 250px;
-  height: 250px;
-}
-
-/* Infinity symbol: fixed at the center */
-.hero-center-symbol {
-  position: absolute;
-  top: 50%;
-  left: 55%;
-  z-index: 1;
-  transform: translate(-50%, -50%) !important;
-  animation: none !important;
-}
-
-/* All number labels start at the same orbit center */
-.floating-number {
-  position: absolute;
-  top: 50% !important;
-  left: 55% !important;
-  right: auto !important;
-  bottom: auto !important;
-  z-index: 3;
-
-  white-space: nowrap;
-  will-change: transform;
-}
-
-/* Number 1: travels along the inner circle */
-.floating-number.number-one {
-  --orbit-radius: 90px;
-  animation: solarOrbit 30s linear infinite !important;
-  animation-delay: -5s !important;
-}
-
-/* Number 2: travels along the outer circle */
-.floating-number.number-two {
-  --orbit-radius: 125px;
-  animation: solarOrbit 42s linear infinite !important;
-  animation-delay: -21s !important;
-}
-
-/* Number 3: also travels along the outer circle,
-   starting from a different position */
-.floating-number.number-three {
-  --orbit-radius: 125px;
-  animation: solarOrbit 42s linear infinite !important;
-  animation-delay: -7s !important;
-}
-
-/* Actual circular movement */
-@keyframes solarOrbit {
-  from {
-    transform:
-      translate(-50%, -50%)
-      rotate(0deg)
-      translateX(var(--orbit-radius))
-      rotate(0deg);
-  }
-
-  to {
-    transform:
-      translate(-50%, -50%)
-      rotate(360deg)
-      translateX(var(--orbit-radius))
-      rotate(-360deg);
-  }
-}
-
-/* Keep orbit animations accessible */
-@media (prefers-reduced-motion: reduce) {
   .floating-number {
-    animation: none !important;
     transform:
       translate(-50%, -50%)
       translateX(var(--orbit-radius));
