@@ -1782,8 +1782,8 @@ select:focus-visible,
   *,
   *::before,
   *::after {
-    animation-duration: .01ms !important;
-    transition-duration: .01ms !important;
+    animation-duration: 45s !important;
+    transition-duration: 45s !important;
     scroll-behavior: auto !important;
   }
 
