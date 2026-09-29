@@ -6,7 +6,9 @@
 // =====================================================
 
 const DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 const MAX_FRACTION_DIGITS = 10000;
+
 const MAX_TABLE_ROWS = 1024;
 
 const $ = id => document.getElementById(id);
@@ -19,9 +21,13 @@ const BASE_NAMES = {
 };
 
 let currentResult = "";
+
 let currentSolution = [];
+
 let lastConversion = null;
+
 let solutionIndex = 0;
+
 let solutionTimer = null;
 
 // =====================================================
@@ -110,6 +116,7 @@ function parseNumber(input, base) {
 
   const negative = text.startsWith("-");
   const unsigned = negative ? text.slice(1) : text;
+
   const [integerText = "", fractionText = ""] =
     unsigned.split(".");
 
@@ -200,7 +207,6 @@ function formatNumber(value, base) {
     const product = before * radix;
     const digit = product / denominator;
     const nextRemainder = product % denominator;
-
     const character = DIGITS[Number(digit)];
     const currentStep = digits.length + 1;
 
@@ -251,6 +257,7 @@ function formatNumber(value, base) {
   if (repeatStart >= 0) {
     const prefix = fractionText.slice(0, repeatStart);
     const cycle = fractionText.slice(repeatStart);
+
     fractionText = `${prefix}(${cycle})`;
   } else if (truncated) {
     fractionText += "…";
@@ -280,9 +287,9 @@ function fractionDescription(value) {
     : `${value.n}/${value.d}`;
 }
 
-// =====================================================
-// SOLUTION BLOCKS
-// =====================================================
+ // =====================================================
+ // SOLUTION BLOCKS
+ // =====================================================
 
 function textBlock(title, description, lines) {
   return {
@@ -341,7 +348,6 @@ function positionalSteps(input, base, title) {
   const text = input.trim().toUpperCase();
   const negative = text.startsWith("-");
   const unsigned = negative ? text.slice(1) : text;
-
   const [integerText = "", fractionalText = ""] =
     unsigned.split(".");
 
@@ -417,7 +423,8 @@ function integerConversionSteps(value, base) {
 
     if (rows.length < MAX_TABLE_ROWS) {
       rows.push([
-        `${whole} ÷ ${base}`,
+        whole.toString(),
+        base.toString(),
         quotient.toString(),
         digit
       ]);
@@ -429,616 +436,500 @@ function integerConversionSteps(value, base) {
 
   return tableBlock(
     "Whole-Number Conversion",
-    `Repeatedly divide the integer portion by ${base}.`,
-    ["Division", "Quotient", "Remainder"],
+    `Repeatedly divide the integer portion by ${base}. Read the remainders from bottom to top.`,
+    [
+      "Dividend",
+      "Divisor",
+      "Quotient",
+      "Remainder"
+    ],
     rows,
-    "Read the remainders from bottom to top: " +
-    remainders.reverse().join("")
+    `Read upward: ${remainders.reverse().join("")}`
   );
 }
 
-// =====================================================
-// FRACTIONAL CONVERSION
-// =====================================================
+ // =====================================================
+ // FRACTIONAL CONVERSION STEPS
+ // =====================================================
 
-function fractionalConversionSteps(value, base, output) {
-  if (output.rows.length === 0) {
+function fractionalConversionSteps(value, base, formatted) {
+  const numerator = absolute(value.n);
+  const denominator = value.d;
+
+  let remainder = numerator % denominator;
+
+  if (remainder === 0n) {
     return textBlock(
       "Fractional Conversion",
-      "There is no fractional portion.",
-      ["Fractional result = 0"]
+      "The number has no fractional portion.",
+      ["No fractional conversion is needed."]
     );
   }
 
-  const rows = output.rows.map(row => [
-    String(row.step),
-    `${decimalDescription(
-      makeFraction(row.before, row.denominator)
-    )} × ${base}`,
-    row.digit,
-    decimalDescription(
-      makeFraction(row.remainder, row.denominator)
-    )
-  ]);
+  const rows = [];
+  const radix = BigInt(base);
+  const seen = new Map();
+  const digits = [];
 
-  let note =
-    "Read the extracted digits from top to bottom: " +
-    output.fractionText + ". ";
+  let repeatStart = -1;
+  let truncated = false;
 
-  let highlightedRow = -1;
+  while (remainder !== 0n) {
+    const key = remainder.toString();
 
-  if (output.repeating) {
-    const repeatedValue = decimalDescription(
-      makeFraction(output.repeatedRemainder, value.d)
-    );
+    if (seen.has(key)) {
+      repeatStart = seen.get(key);
+      break;
+    }
 
-    const firstStep = output.repeatStart + 1;
+    if (digits.length >= MAX_FRACTION_DIGITS) {
+      truncated = true;
+      break;
+    }
 
-    note +=
-      `Stop: Remainder ${repeatedValue} appears again ` +
-      `at Step ${output.repeatStep}. ` +
-      `It was previously used at Step ${firstStep}.`;
+    seen.set(key, digits.length);
 
-    highlightedRow = output.rows.findIndex(
-      row => row.repeated
-    );
-  } else if (output.truncated) {
-    note +=
-      "The 10,000-digit safety limit was reached. " +
-      "The expansion is incomplete.";
+    const before = remainder;
+    const product = before * radix;
+    const digit = product / denominator;
+
+    remainder = product % denominator;
+
+    const digitText = DIGITS[Number(digit)];
+    digits.push(digitText);
+
+    if (rows.length < MAX_TABLE_ROWS) {
+      rows.push([
+        digits.length.toString(),
+        `${before}/${denominator}`,
+        `${before} × ${base} / ${denominator}`,
+        digitText,
+        `${remainder}/${denominator}`
+      ]);
+    }
+  }
+
+  let explanation = "";
+
+  if (repeatStart >= 0) {
+    const prefix = digits.slice(0, repeatStart).join("");
+    const repeating = digits.slice(repeatStart).join("");
+
+    explanation =
+      `The remainder repeats, so the digits repeat. ` +
+      `Fractional result: .${prefix}(${repeating})`;
+  } else if (truncated) {
+    explanation =
+      `The fractional expansion exceeds ${MAX_FRACTION_DIGITS} digits. ` +
+      "The displayed digits are truncated.";
   } else {
-    note += "Stop: The remainder became zero.";
-  }
-
-  if (output.digits.length > output.rows.length) {
-    note +=
-      ` Showing the first ${output.rows.length} ` +
-      "calculation rows only.";
+    explanation =
+      `The remainder becomes zero. ` +
+      `Fractional result: .${digits.join("")}`;
   }
 
   return tableBlock(
     "Fractional Conversion",
-    `Multiply the fractional remainder by ${base}. ` +
-    "Stop when the remainder is zero or repeats.",
-    ["#", "Fraction × Base", "Digit", "Next Remainder"],
+    `Multiply the fractional remainder by ${base}, ` +
+      "record the integer digit, and continue with the new remainder.",
+    [
+      "Step",
+      "Fraction",
+      "Multiplication",
+      "Digit",
+      "New Remainder"
+    ],
     rows,
-    note,
-    highlightedRow,
-    3
-  );
-}
-
-// =====================================================
-// PEN-AND-PAPER ARITHMETIC HELPERS
-// =====================================================
-
-function repeatCharacter(character, count) {
-  return character.repeat(Math.max(1, count));
-}
-
-function alignRight(text, width) {
-  return String(text).padStart(width, " ");
-}
-
-function makeVerticalWorking(top, bottom, symbol, result) {
-  const width = Math.max(
-    top.length,
-    bottom.length + 2,
-    result.length,
-    5
-  );
-
-  return [
-    alignRight(top, width),
-    alignRight(`${symbol} ${bottom}`, width),
-    repeatCharacter("─", width),
-    alignRight(result, width)
-  ].join("\n");
-}
-
-function decimalPlaces(value) {
-  // Returns the number of decimal places if
-  // the rational value terminates in Base 10.
-  // Returns null if the decimal repeats.
-
-  let denominator = value.d;
-  let twos = 0;
-  let fives = 0;
-
-  while (denominator % 2n === 0n) {
-    denominator /= 2n;
-    twos++;
-  }
-
-  while (denominator % 5n === 0n) {
-    denominator /= 5n;
-    fives++;
-  }
-
-  if (denominator !== 1n) {
-    return null;
-  }
-
-  return Math.max(twos, fives);
-}
-
-function powerOfTen(n) {
-  return 10n ** BigInt(n);
-}
-
-function scaledInteger(value, places) {
-  const scale = powerOfTen(places);
-
-  return (value.n * scale) / value.d;
-}
-
-function formatScaledInteger(number, places) {
-  const negative = number < 0n;
-  let digits = absolute(number).toString();
-
-  if (places > 0) {
-    digits = digits.padStart(places + 1, "0");
-
-    const cut = digits.length - places;
-
-    digits =
-      digits.slice(0, cut) +
-      "." +
-      digits.slice(cut);
-  }
-
-  return (negative ? "-" : "") + digits;
-}
-
-function paperSection(label, working, explanation = "") {
-  return {
-    label,
-    working,
     explanation
+  );
+}
+
+// =====================================================
+// BUILD COMPLETE CONVERSION SOLUTION
+// =====================================================
+
+function buildConversionSolution(input, fromBase, toBase) {
+  const value = parseNumber(input, fromBase);
+  const formatted = formatNumber(value, toBase);
+
+  const steps = [];
+
+  steps.push(
+    textBlock(
+      "Identify the Given Number",
+      "Start with the original number and its source base.",
+      [
+        `Given number: ${input.toUpperCase()}`,
+        `Source base: ${fromBase}`,
+        `Target base: ${toBase}`
+      ]
+    )
+  );
+
+  steps.push(
+    positionalSteps(
+      input,
+      fromBase,
+      "Convert the Original Number to Decimal"
+    )
+  );
+
+  steps.push(
+    textBlock(
+      "Identify the Exact Decimal Value",
+      "Keep the value as an exact fraction to avoid rounding errors.",
+      [
+        `Exact fraction: ${fractionDescription(value)}`,
+        `Decimal representation: ${decimalDescription(value)}`
+      ]
+    )
+  );
+
+  steps.push(integerConversionSteps(value, toBase));
+
+  steps.push(
+    fractionalConversionSteps(value, toBase, formatted)
+  );
+
+  steps.push(
+    finalBlock(
+      "Final Conversion Result",
+      `The original number in Base ${fromBase} ` +
+        `is represented in Base ${toBase} as:`,
+      formatted.text
+    )
+  );
+
+  return {
+    value,
+    formatted,
+    steps
   };
 }
 
 // =====================================================
-// VERTICAL ADDITION & SUBTRACTION
+// EXACT CALCULATOR RESULT
 // =====================================================
 
-function additionSubtractionPaper(a, b, operator, result) {
-  const aPlaces = decimalPlaces(a);
-  const bPlaces = decimalPlaces(b);
+function calculateExactResult(first, second, operator) {
+  switch (operator) {
+    case "+":
+      return add(first, second);
 
-  const sections = [];
+    case "-":
+      return subtract(first, second);
 
-  // If both decimals terminate, align decimal places.
-  if (aPlaces !== null && bPlaces !== null) {
-    const places = Math.max(aPlaces, bPlaces);
+    case "*":
+      return multiply(first, second);
 
-    const left = formatScaledInteger(
-      scaledInteger(a, places),
-      places
-    );
+    case "/":
+      return divide(first, second);
 
-    const right = formatScaledInteger(
-      scaledInteger(b, places),
-      places
-    );
-
-    const answer = formatScaledInteger(
-      scaledInteger(result, places),
-      places
-    );
-
-    sections.push(
-      paperSection(
-        "Vertical Calculation",
-        makeVerticalWorking(
-          left,
-          right,
-          operator === "+" ? "+" : "−",
-          answer
-        ),
-        "Align the decimal points. Work from right " +
-        "to left, carrying or borrowing where needed."
-      )
-    );
-
-    sections.push(
-      paperSection(
-        "Check the Result",
-        `${decimalDescription(a)} ` +
-        `${operator === "+" ? "+" : "−"} ` +
-        `${decimalDescription(b)}\n` +
-        `= ${decimalDescription(result)}`,
-        "The displayed answer is exact."
-      )
-    );
-  } else {
-    // Repeating decimals cannot be aligned
-    // using a finite number of columns.
-    const commonDenominator = a.d * b.d;
-    const leftNumerator = a.n * b.d;
-    const rightNumerator = b.n * a.d;
-
-    const answerNumerator =
-      operator === "+"
-        ? leftNumerator + rightNumerator
-        : leftNumerator - rightNumerator;
-
-    sections.push(
-      paperSection(
-        "Write the Exact Values",
-        `${fractionDescription(a)} ` +
-        `${operator === "+" ? "+" : "−"} ` +
-        `${fractionDescription(b)}`,
-        "A repeating decimal has infinitely many digits, " +
-        "so use exact fractions for the written working."
-      )
-    );
-
-    sections.push(
-      paperSection(
-        "Use a Common Denominator",
-        `${leftNumerator}/${commonDenominator}\n` +
-        `${operator === "+" ? "+" : "−"} ` +
-        `${rightNumerator}/${commonDenominator}\n` +
-        repeatCharacter("─", 24) + "\n" +
-        `${answerNumerator}/${commonDenominator}`,
-        "Combine the numerators while keeping " +
-        "the common denominator."
-      )
-    );
-
-    sections.push(
-      paperSection(
-        "Simplify and Convert to Decimal",
-        `${answerNumerator}/${commonDenominator}\n` +
-        `= ${fractionDescription(result)}\n` +
-        `= ${decimalDescription(result)}`,
-        "The decimal result is exact."
-      )
-    );
+    default:
+      throw new Error("Invalid mathematical operation.");
   }
-
-  return paperBlock(
-    "Step 3: Perform the Arithmetic Operation",
-    operator === "+"
-      ? "Solve the addition using written working."
-      : "Solve the subtraction using written working.",
-    sections,
-    decimalDescription(result)
-  );
 }
 
 // =====================================================
-// LONG MULTIPLICATION
+// OPERATION SYMBOL
 // =====================================================
 
-function multiplicationPaper(a, b, result) {
-  const sections = [];
+function operationSymbol(operator) {
+  switch (operator) {
+    case "+":
+      return "+";
 
-  const aPlaces = decimalPlaces(a);
-  const bPlaces = decimalPlaces(b);
+    case "-":
+      return "−";
 
-  if (aPlaces !== null && bPlaces !== null) {
-    const left = scaledInteger(a, aPlaces);
-    const right = scaledInteger(b, bPlaces);
+    case "*":
+      return "×";
 
-    const leftAbs = absolute(left);
-    const rightAbs = absolute(right);
+    case "/":
+      return "÷";
 
-    const multiplierDigits =
-      rightAbs.toString().split("").reverse();
+    default:
+      return operator;
+  }
+}
 
-    const partials = multiplierDigits.map(
-      (character, index) => {
-        return (
-          leftAbs *
-          BigInt(character) *
-          powerOfTen(index)
-        );
-      }
-    );
+ // =====================================================
+ // CALCULATOR — EXACT FRACTION EXPLANATIONS
+ // =====================================================
 
-    const product = leftAbs * rightAbs;
-    const totalPlaces = aPlaces + bPlaces;
+function fractionArithmeticSteps(first, second, operator, result) {
+  const symbol = operationSymbol(operator);
+  const lines = [];
 
-    const width = Math.max(
-      leftAbs.toString().length,
-      rightAbs.toString().length + 2,
-      product.toString().length,
-      ...partials.map(p => p.toString().length),
-      5
-    );
+  lines.push(
+    `First value: ${fractionDescription(first)}`
+  );
 
-    const lines = [
-      alignRight(leftAbs.toString(), width),
-      alignRight(`× ${rightAbs}`, width),
-      repeatCharacter("─", width)
-    ];
+  lines.push(
+    `Second value: ${fractionDescription(second)}`
+  );
 
-    partials.forEach(partial => {
+  switch (operator) {
+    case "+": {
+      const left = first.n * second.d;
+      const right = second.n * first.d;
+      const denominator = first.d * second.d;
+
       lines.push(
-        alignRight(partial.toString(), width)
+        "For addition, use a common denominator."
       );
-    });
 
-    if (partials.length > 1) {
-      lines.push(repeatCharacter("─", width));
+      lines.push(
+        `(${first.n} × ${second.d}) + ` +
+        `(${second.n} × ${first.d})`
+      );
+
+      lines.push(
+        `= (${left} + ${right}) / ${denominator}`
+      );
+
+      break;
     }
 
-    lines.push(
-      alignRight(product.toString(), width)
-    );
+    case "-": {
+      const left = first.n * second.d;
+      const right = second.n * first.d;
+      const denominator = first.d * second.d;
 
-    sections.push(
-      paperSection(
-        "Long Multiplication",
-        lines.join("\n"),
-        "Multiply by each digit of the second number, " +
-        "moving from right to left. Each partial product " +
-        "includes its correct place-value shift."
-      )
-    );
+      lines.push(
+        "For subtraction, use a common denominator."
+      );
 
-    sections.push(
-      paperSection(
-        "Place the Decimal Point",
-        `First number: ${decimalDescription(a)}\n` +
-        `Second number: ${decimalDescription(b)}\n` +
-        `Decimal places: ${aPlaces} + ${bPlaces} = ${totalPlaces}\n` +
-        `Product: ${formatScaledInteger(
-          left * right,
-          totalPlaces
-        )}`,
-        "The final product has the combined number " +
-        "of decimal places."
-      )
-    );
-  } else {
-    const numerator = a.n * b.n;
-    const denominator = a.d * b.d;
+      lines.push(
+        `(${first.n} × ${second.d}) − ` +
+        `(${second.n} × ${first.d})`
+      );
 
-    sections.push(
-      paperSection(
-        "Write the Exact Values",
-        `${fractionDescription(a)}\n` +
-        `× ${fractionDescription(b)}`,
-        "At least one operand has a repeating decimal. " +
-        "Use exact fractions rather than rounding."
-      )
-    );
+      lines.push(
+        `= (${left} − ${right}) / ${denominator}`
+      );
 
-    sections.push(
-      paperSection(
-        "Multiply Numerators and Denominators",
-        `(${a.n} × ${b.n})\n` +
-        repeatCharacter("─", 24) + "\n" +
-        `(${a.d} × ${b.d})\n\n` +
-        `= ${numerator}/${denominator}`,
-        "Multiply the numerators together and " +
-        "the denominators together."
-      )
-    );
+      break;
+    }
 
-    sections.push(
-      paperSection(
-        "Simplify the Product",
-        `${numerator}/${denominator}\n` +
-        `= ${fractionDescription(result)}\n` +
-        `= ${decimalDescription(result)}`,
-        "The simplified fraction gives the exact " +
-        "decimal result."
-      )
-    );
+    case "*": {
+      lines.push(
+        "Multiply the numerators and denominators."
+      );
+
+      lines.push(
+        `(${first.n} × ${second.n}) / ` +
+        `(${first.d} × ${second.d})`
+      );
+
+      break;
+    }
+
+    case "/": {
+      lines.push(
+        "Multiply the first fraction by the reciprocal of the second."
+      );
+
+      lines.push(
+        `(${first.n} × ${second.d}) / ` +
+        `(${first.d} × ${second.n})`
+      );
+
+      break;
+    }
   }
 
-  return paperBlock(
-    "Step 3: Perform the Arithmetic Operation",
-    "Solve the multiplication with partial products.",
-    sections,
-    decimalDescription(result)
+  lines.push(
+    `Exact result: ${fractionDescription(result)}`
+  );
+
+  lines.push(
+    `Decimal representation: ${decimalDescription(result)}`
+  );
+
+  return textBlock(
+    `Perform ${operationName(operator)}`,
+    `Apply the ${symbol} operation using exact fraction arithmetic.`,
+    lines
   );
 }
 
 // =====================================================
-// LONG DIVISION
+// OPERATION NAMES
 // =====================================================
 
-function divisionPaper(a, b, result) {
-  const sections = [];
+function operationName(operator) {
+  switch (operator) {
+    case "+":
+      return "Addition";
 
-  const aPlaces = decimalPlaces(a);
-  const bPlaces = decimalPlaces(b);
+    case "-":
+      return "Subtraction";
 
-  // Show a decimal long-division setup if
-  // both operands have terminating decimals.
-  if (aPlaces !== null && bPlaces !== null) {
-    const places = Math.max(aPlaces, bPlaces);
+    case "*":
+      return "Multiplication";
 
-    const dividend = scaledInteger(a, places);
-    const divisor = scaledInteger(b, places);
+    case "/":
+      return "Division";
 
-    const positiveDividend = absolute(dividend);
-    const positiveDivisor = absolute(divisor);
-
-    const wholeQuotient =
-      positiveDividend / positiveDivisor;
-
-    let remainder =
-      positiveDividend % positiveDivisor;
-
-    const lines = [
-      `${positiveDivisor} ⟌ ${positiveDividend}`,
-      "",
-      `Whole quotient = ${wholeQuotient}`,
-      `Remainder = ${remainder}`
-    ];
-
-    sections.push(
-      paperSection(
-        "Set Up Long Division",
-        lines.join("\n"),
-        "Move the decimal points equally in the " +
-        "dividend and divisor until the divisor " +
-        "is a whole number."
-      )
-    );
-
-    const working = [];
-    const seen = new Map();
-    let position = 0;
-    let repeated = false;
-
-    while (
-      remainder !== 0n &&
-      position < Math.min(MAX_FRACTION_DIGITS, 80)
-    ) {
-      const key = remainder.toString();
-
-      if (seen.has(key)) {
-        repeated = true;
-        working.push(
-          `Remainder ${remainder} repeats — stop.`
-        );
-        break;
-      }
-
-      seen.set(key, position);
-
-      const broughtDown = remainder * 10n;
-      const digit = broughtDown / positiveDivisor;
-      const subtracted = digit * positiveDivisor;
-      const nextRemainder =
-        broughtDown - subtracted;
-
-      working.push(
-        `${broughtDown} ÷ ${positiveDivisor} = ${digit}`,
-        `${broughtDown} − ${subtracted} = ${nextRemainder}`,
-        ""
-      );
-
-      remainder = nextRemainder;
-      position++;
-    }
-
-    if (working.length === 0) {
-      working.push(
-        "The division ends with remainder 0."
-      );
-    } else if (
-      remainder !== 0n &&
-      !repeated &&
-      position >= 80
-    ) {
-      working.push(
-        "Additional long-division rows omitted."
-      );
-    }
-
-    sections.push(
-      paperSection(
-        "Bring Down Zeros and Subtract",
-        working.join("\n"),
-        "For each decimal place, bring down a zero, " +
-        "divide, subtract, and continue until the " +
-        "remainder becomes zero or repeats."
-      )
-    );
-  } else {
-    sections.push(
-      paperSection(
-        "Write the Exact Values",
-        `${fractionDescription(a)}\n` +
-        `÷ ${fractionDescription(b)}`,
-        "Use exact fraction division to avoid " +
-        "rounding repeating decimal operands."
-      )
-    );
+    default:
+      return "Calculation";
   }
+}
 
-  const numerator = a.n * b.d;
-  const denominator = a.d * b.n;
+// =====================================================
+// CALCULATOR — BUILD COMPLETE SOLUTION
+// =====================================================
 
-  sections.push(
-    paperSection(
-      "Verify Using Exact Division",
-      `(${a.n} × ${b.d})\n` +
-      repeatCharacter("─", 24) + "\n" +
-      `(${a.d} × ${b.n})\n\n` +
-      `= ${numerator}/${denominator}\n` +
-      `= ${fractionDescription(result)}\n` +
-      `= ${decimalDescription(result)}`,
-      "Dividing by a fraction is equivalent to " +
-      "multiplying by its reciprocal."
+function buildCalculatorSolution(
+  firstInput,
+  firstBase,
+  secondInput,
+  secondBase,
+  operator,
+  resultBase
+) {
+  const first = parseNumber(firstInput, firstBase);
+  const second = parseNumber(secondInput, secondBase);
+
+  const result = calculateExactResult(
+    first,
+    second,
+    operator
+  );
+
+  const formatted = formatNumber(result, resultBase);
+  const symbol = operationSymbol(operator);
+
+  const steps = [];
+
+  steps.push(
+    textBlock(
+      "Identify the Given Values",
+      "Read both numbers and their respective bases.",
+      [
+        `First number: ${firstInput.toUpperCase()} (Base ${firstBase})`,
+        `Second number: ${secondInput.toUpperCase()} (Base ${secondBase})`,
+        `Operation: ${operationName(operator)} (${symbol})`,
+        `Requested result base: ${resultBase}`
+      ]
     )
   );
 
-  return paperBlock(
-    "Step 3: Perform the Arithmetic Operation",
-    "Solve the division and show the remainder working.",
-    sections,
-    decimalDescription(result)
+  steps.push(
+    positionalSteps(
+      firstInput,
+      firstBase,
+      "Convert the First Number to Decimal"
+    )
   );
+
+  steps.push(
+    positionalSteps(
+      secondInput,
+      secondBase,
+      "Convert the Second Number to Decimal"
+    )
+  );
+
+  steps.push(
+    fractionArithmeticSteps(
+      first,
+      second,
+      operator,
+      result
+    )
+  );
+
+  steps.push(
+    integerConversionSteps(
+      result,
+      resultBase
+    )
+  );
+
+  steps.push(
+    fractionalConversionSteps(
+      result,
+      resultBase,
+      formatted
+    )
+  );
+
+  steps.push(
+    finalBlock(
+      "Final Calculation Result",
+      `${firstInput.toUpperCase()} (Base ${firstBase}) ` +
+        `${symbol} ${secondInput.toUpperCase()} (Base ${secondBase}) ` +
+        `produces the following result in Base ${resultBase}:`,
+      formatted.text
+    )
+  );
+
+  return {
+    first,
+    second,
+    result,
+    formatted,
+    steps
+  };
 }
 
 // =====================================================
-// CHOOSE ARITHMETIC SOLUTION STYLE
+// FORMAT REPEATING FRACTION INFORMATION
 // =====================================================
 
-function arithmeticPaper(a, b, operator, result) {
-  if (operator === "+" || operator === "-") {
-    return additionSubtractionPaper(
-      a,
-      b,
-      operator,
-      result
+function fractionResultNote(formatted, base) {
+  if (formatted.repeating) {
+    return (
+      `The digits inside parentheses repeat indefinitely ` +
+      `in Base ${base}.`
     );
   }
 
-  if (operator === "*") {
-    return multiplicationPaper(a, b, result);
+  if (formatted.truncated) {
+    return (
+      `The fractional expansion is longer than ` +
+      `${MAX_FRACTION_DIGITS} digits. ` +
+      `The displayed representation is truncated.`
+    );
   }
 
-  return divisionPaper(a, b, result);
-}
-
-// =====================================================
-// INITIALIZE BASE SELECTORS
-// =====================================================
-
-const baseSelects = [
-  "fromBase",
-  "toBase",
-  "firstBase",
-  "secondBase",
-  "resultBase"
-];
-
-for (const id of baseSelects) {
-  const select = $(id);
-
-  for (let base = 2; base <= 36; base++) {
-    const option = document.createElement("option");
-
-    option.value = String(base);
-    option.textContent =
-      `Base ${base}` +
-      (BASE_NAMES[base] ? ` (${BASE_NAMES[base]})` : "");
-
-    select.appendChild(option);
+  if (formatted.fractionText) {
+    return `Exact fractional representation in Base ${base}.`;
   }
+
+  return `Exact whole-number representation in Base ${base}.`;
 }
 
-$("fromBase").value = "10";
-$("toBase").value = "2";
-$("firstBase").value = "2";
-$("secondBase").value = "2";
-$("resultBase").value = "2";
+ // =====================================================
+ // BASELAB — DISPLAY RESULTS AND HANDLE BUTTONS
+ // =====================================================
 
-// =====================================================
-// RESULT MANAGEMENT
-// =====================================================
+function showError(message) {
+  const error = $("errorMessage");
 
-function stopAnimation() {
+  if (!error) return;
+
+  error.textContent = message;
+  error.hidden = false;
+
+  $("resultSection").hidden = true;
+  $("solutionSection").hidden = true;
+
+  stopSolutionPlayback();
+}
+
+function clearError() {
+  const error = $("errorMessage");
+
+  if (!error) return;
+
+  error.textContent = "";
+  error.hidden = true;
+}
+
+function stopSolutionPlayback() {
   if (solutionTimer !== null) {
     clearInterval(solutionTimer);
     solutionTimer = null;
@@ -1046,743 +937,618 @@ function stopAnimation() {
 }
 
 function hideResults() {
-  stopAnimation();
+  clearError();
+  stopSolutionPlayback();
 
   $("resultSection").hidden = true;
   $("solutionSection").hidden = true;
-  $("errorMessage").hidden = true;
 
   currentResult = "";
   currentSolution = [];
-  lastConversion = null;
   solutionIndex = 0;
 }
 
-function showError(message) {
-  hideResults();
-  $("errorMessage").textContent = message;
-  $("errorMessage").hidden = false;
-}
+function showResult(formatted, base, steps) {
+  clearError();
+  stopSolutionPlayback();
 
-function showResult(result, solution, note = "") {
-  stopAnimation();
-
-  currentResult = result;
-  currentSolution = solution;
+  currentResult = formatted.text;
+  currentSolution = steps;
   solutionIndex = 0;
 
-  $("errorMessage").hidden = true;
-  $("resultNumber").textContent = result;
-  $("resultNote").textContent = note;
+  $("resultNumber").textContent = formatted.text;
+  $("resultNote").textContent =
+    fractionResultNote(formatted, base);
 
   $("resultSection").hidden = false;
   $("solutionSection").hidden = true;
 
-  $("solutionBtn").textContent =
-    "Show Step-by-Step Solution";
-}
+  const solutionButton = $("solutionBtn");
 
-function outputNote(output) {
-  if (output.truncated) {
-    return (
-      "Incomplete fractional expansion: " +
-      "the 10,000-digit safety limit was reached."
-    );
+  if (solutionButton) {
+    solutionButton.textContent = "Show Step-by-Step Solution";
   }
-
-  if (output.repeating) {
-    return (
-      "Exact repeating representation. " +
-      "Parentheses indicate repeating digits."
-    );
-  }
-
-  return "Exact conversion result.";
 }
 
 // =====================================================
-// TAB NAVIGATION
+// CONVERTER BUTTON
 // =====================================================
 
-document.querySelectorAll(".tab").forEach(button => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(tab => {
-      tab.classList.remove("active");
-    });
-
-    document.querySelectorAll(".tab-content").forEach(
-      section => {
-        section.classList.remove("active");
-      }
-    );
-
-    button.classList.add("active");
-    $(button.dataset.tab).classList.add("active");
-
-    hideResults();
-  });
-});
-
-// =====================================================
-// BASE CONVERTER
-// =====================================================
-
-$("convertBtn").addEventListener("click", () => {
+function convertNumber() {
   try {
     const input = $("convertNumber").value.trim();
-    const from = Number($("fromBase").value);
-    const to = Number($("toBase").value);
+    const fromBase = Number($("fromBase").value);
+    const toBase = Number($("toBase").value);
 
-    const value = parseNumber(input, from);
-    const output = formatNumber(value, to);
-
-    const solution = [
-      textBlock(
-        "Step 1: Identify the Given Values",
-        "Determine the original number and target base.",
-        [
-          `Given number: ${input.toUpperCase()}`,
-          `Source base: ${from}`,
-          `Target base: ${to}`
-        ]
-      )
-    ];
-
-    if (from === to) {
-      solution.push(
-        textBlock(
-          "Step 2: No Conversion Required",
-          "The source and target bases are identical.",
-          ["No mathematical conversion is needed."]
-        )
-      );
-    } else if (from === 10) {
-      solution.push(integerConversionSteps(value, to));
-      solution.push(
-        fractionalConversionSteps(value, to, output)
-      );
-    } else if (to === 10) {
-      solution.push(
-        positionalSteps(
-          input,
-          from,
-          "Step 2: Convert Directly to Decimal"
-        )
-      );
-    } else {
-      solution.push(
-        positionalSteps(
-          input,
-          from,
-          "Step 2: Convert to Decimal"
-        )
-      );
-
-      solution.push(integerConversionSteps(value, to));
-
-      solution.push(
-        fractionalConversionSteps(value, to, output)
-      );
+    if (!input) {
+      throw new Error("Please enter a number to convert.");
     }
 
-    solution.push(
-      finalBlock(
-        "Final Answer",
-        "The number in the selected target base.",
-        `${input.toUpperCase()} (Base ${from}) = ` +
-        `${output.text} (Base ${to})`
-      )
+    const conversion = buildConversionSolution(
+      input,
+      fromBase,
+      toBase
     );
+
+    lastConversion = conversion;
 
     showResult(
-      output.text,
-      solution,
-      outputNote(output)
+      conversion.formatted,
+      toBase,
+      conversion.steps
     );
-
-    lastConversion = {
-      value,
-      from,
-      to,
-      output
-    };
   } catch (error) {
     showError(error.message);
   }
-});
+}
 
 // =====================================================
-// ARITHMETIC CALCULATOR
+// CALCULATOR BUTTON
 // =====================================================
 
-$("calculateBtn").addEventListener("click", () => {
+function calculateNumber() {
   try {
-    const first = $("firstNumber").value.trim();
-    const second = $("secondNumber").value.trim();
+    const firstInput = $("firstNumber").value.trim();
+    const secondInput = $("secondNumber").value.trim();
 
     const firstBase = Number($("firstBase").value);
     const secondBase = Number($("secondBase").value);
-    const resultBase = Number($("resultBase").value);
+
     const operator = $("operator").value;
+    const resultBase = Number($("resultBase").value);
 
-    const a = parseNumber(first, firstBase);
-    const b = parseNumber(second, secondBase);
-
-    let result;
-
-    switch (operator) {
-      case "+":
-        result = add(a, b);
-        break;
-      case "-":
-        result = subtract(a, b);
-        break;
-      case "*":
-        result = multiply(a, b);
-        break;
-      case "/":
-        result = divide(a, b);
-        break;
-      default:
-        throw new Error("Invalid operation.");
-    }
-
-    const output = formatNumber(result, resultBase);
-
-    const solution = [];
-
-    if (firstBase !== 10) {
-      solution.push(
-        positionalSteps(
-          first,
-          firstBase,
-          "Step 1: Convert the First Number to Decimal"
-        )
-      );
-    } else {
-      solution.push(
-        textBlock(
-          "Step 1: Identify the First Number",
-          "The first number is already in decimal.",
-          [`First number: ${decimalDescription(a)}`]
-        )
+    if (!firstInput || !secondInput) {
+      throw new Error(
+        "Please enter both numbers before calculating."
       );
     }
 
-    if (secondBase !== 10) {
-      solution.push(
-        positionalSteps(
-          second,
-          secondBase,
-          "Step 2: Convert the Second Number to Decimal"
-        )
-      );
-    } else {
-      solution.push(
-        textBlock(
-          "Step 2: Identify the Second Number",
-          "The second number is already in decimal.",
-          [`Second number: ${decimalDescription(b)}`]
-        )
-      );
-    }
-
-    // NEW: Actual written arithmetic working
-    solution.push(
-      arithmeticPaper(a, b, operator, result)
-    );
-
-    if (resultBase !== 10) {
-      solution.push(
-        integerConversionSteps(result, resultBase)
-      );
-
-      solution.push(
-        fractionalConversionSteps(
-          result,
-          resultBase,
-          output
-        )
-      );
-    }
-
-    solution.push(
-      finalBlock(
-        "Final Answer",
-        "The arithmetic result in the selected base.",
-        `${output.text} (Base ${resultBase})`
-      )
+    const calculation = buildCalculatorSolution(
+      firstInput,
+      firstBase,
+      secondInput,
+      secondBase,
+      operator,
+      resultBase
     );
 
     showResult(
-      output.text,
-      solution,
-      outputNote(output)
+      calculation.formatted,
+      resultBase,
+      calculation.steps
     );
   } catch (error) {
     showError(error.message);
   }
-});
-
-// =====================================================
-// HTML ELEMENT HELPERS
-// =====================================================
-
-function createElement(tag, className, content) {
-  const element = document.createElement(tag);
-
-  if (className) {
-    element.className = className;
-  }
-
-  if (content !== undefined) {
-    element.textContent = content;
-  }
-
-  return element;
-}
-
-function renderTextStep(step, card) {
-  for (const line of step.lines) {
-    card.appendChild(
-      createElement("p", "", line)
-    );
-  }
 }
 
 // =====================================================
-// RENDER TABLE STEPS
+// SWAP BASES
 // =====================================================
 
-function renderTableStep(step, card) {
-  const wrapper = createElement(
-    "div",
-    "solution-table-wrapper"
-  );
+function swapBases() {
+  const fromBase = $("fromBase");
+  const toBase = $("toBase");
 
-  const table = createElement(
-    "table",
-    "solution-table"
-  );
+  const previousFrom = fromBase.value;
 
-  const thead = document.createElement("thead");
-  const headerRow = document.createElement("tr");
+  fromBase.value = toBase.value;
+  toBase.value = previousFrom;
 
-  for (const heading of step.headers) {
-    headerRow.appendChild(
-      createElement("th", "", heading)
+  hideResults();
+}
+
+// =====================================================
+// RESET CONVERTER
+// =====================================================
+
+function resetConverter() {
+  $("convertNumber").value = "";
+  $("fromBase").value = "10";
+  $("toBase").value = "2";
+
+  lastConversion = null;
+
+  hideResults();
+}
+
+// =====================================================
+// RESET CALCULATOR
+// =====================================================
+
+function resetCalculator() {
+  $("firstNumber").value = "";
+  $("secondNumber").value = "";
+
+  $("firstBase").value = "10";
+  $("secondBase").value = "10";
+
+  $("operator").value = "+";
+  $("resultBase").value = "10";
+
+  hideResults();
+}
+
+// =====================================================
+// COPY RESULT
+// =====================================================
+
+async function copyResult() {
+  if (!currentResult) return;
+
+  try {
+    await navigator.clipboard.writeText(currentResult);
+
+    const button = $("copyBtn");
+
+    button.textContent = "Copied!";
+
+    setTimeout(() => {
+      button.textContent = "Copy";
+    }, 1800);
+  } catch (error) {
+    showError(
+      "Unable to copy automatically. Please select and copy the result manually."
     );
-  }
-
-  thead.appendChild(headerRow);
-  table.appendChild(thead);
-
-  const tbody = document.createElement("tbody");
-  const visibleRows = step.rows.slice(0, MAX_TABLE_ROWS);
-
-  visibleRows.forEach((row, rowIndex) => {
-    const tr = document.createElement("tr");
-
-    row.forEach((value, columnIndex) => {
-      const td = createElement("td", "", value);
-
-      if (
-        step.headers[columnIndex] === "Digit" ||
-        step.headers[columnIndex] === "Remainder"
-      ) {
-        td.classList.add("digit-cell");
-      }
-
-      if (
-        rowIndex === step.highlightedRow &&
-        columnIndex === step.highlightedColumn
-      ) {
-        td.classList.add("repeated-remainder");
-
-        td.style.backgroundColor = "#FFF0D6";
-        td.style.color = "#B45309";
-        td.style.fontWeight = "700";
-        td.style.border = "2px solid #F59E0B";
-        td.title = "Repeated remainder — stop here.";
-      }
-
-      tr.appendChild(td);
-    });
-
-    tbody.appendChild(tr);
-  });
-
-  table.appendChild(tbody);
-  wrapper.appendChild(table);
-  card.appendChild(wrapper);
-
-  if (step.note) {
-    const highlight = createElement(
-      "div",
-      "solution-highlight"
-    );
-
-    highlight.appendChild(
-      createElement("p", "", step.note)
-    );
-
-    card.appendChild(highlight);
   }
 }
 
 // =====================================================
-// NEW: RENDER PEN-AND-PAPER WORKING
+// POPULATE BASE SELECTORS
 // =====================================================
 
-function renderPaperStep(step, card) {
-  const container = createElement(
-    "div",
-    "paper-solution"
-  );
+function populateBaseSelectors() {
+  const selectors = [
+    "fromBase",
+    "toBase",
+    "firstBase",
+    "secondBase",
+    "resultBase"
+  ];
 
-  step.sections.forEach((section, index) => {
-    const sectionCard = createElement(
-      "div",
-      "paper-section"
-    );
+  selectors.forEach(id => {
+    const select = $(id);
 
-    const heading = createElement(
-      "h4",
-      "paper-section-title",
-      `${index + 1}. ${section.label}`
-    );
+    if (!select) return;
 
-    sectionCard.appendChild(heading);
+    select.innerHTML = "";
 
-    const paper = createElement(
-      "div",
-      "paper-sheet"
-    );
+    for (let base = 2; base <= 36; base++) {
+      const option = document.createElement("option");
 
-    const working = createElement(
-      "pre",
-      "paper-working",
-      section.working
-    );
+      option.value = String(base);
 
-    paper.appendChild(working);
-    sectionCard.appendChild(paper);
+      const name = BASE_NAMES[base];
 
-    if (section.explanation) {
-      sectionCard.appendChild(
-        createElement(
-          "p",
-          "paper-explanation",
-          section.explanation
-        )
-      );
+      option.textContent = name
+        ? `Base ${base} — ${name}`
+        : `Base ${base}`;
+
+      select.appendChild(option);
     }
-
-    container.appendChild(sectionCard);
   });
 
-  const answerBox = createElement(
-    "div",
-    "paper-answer"
-  );
+  $("fromBase").value = "10";
+  $("toBase").value = "2";
 
-  answerBox.appendChild(
-    createElement(
-      "span",
-      "paper-answer-label",
-      "DECIMAL ANSWER"
-    )
-  );
-
-  answerBox.appendChild(
-    createElement(
-      "strong",
-      "paper-answer-value",
-      step.answer
-    )
-  );
-
-  container.appendChild(answerBox);
-  card.appendChild(container);
+  $("firstBase").value = "10";
+  $("secondBase").value = "10";
+  $("resultBase").value = "10";
 }
 
 // =====================================================
-// RENDER INTERACTIVE SOLUTION
+// CONVERTER AND CALCULATOR EVENT LISTENERS
 // =====================================================
 
-function renderSolution() {
-  if (currentSolution.length === 0) {
+function initializeCalculatorControls() {
+  $("convertBtn").addEventListener(
+    "click",
+    convertNumber
+  );
+
+  $("calculateBtn").addEventListener(
+    "click",
+    calculateNumber
+  );
+
+  $("swapBtn").addEventListener(
+    "click",
+    swapBases
+  );
+
+  $("resetConvertBtn").addEventListener(
+    "click",
+    resetConverter
+  );
+
+  $("resetCalcBtn").addEventListener(
+    "click",
+    resetCalculator
+  );
+
+  $("copyBtn").addEventListener(
+    "click",
+    copyResult
+  );
+
+  // Press Enter to calculate or convert.
+  $("convertNumber").addEventListener(
+    "keydown",
+    event => {
+      if (event.key === "Enter") {
+        convertNumber();
+      }
+    }
+  );
+
+  ["firstNumber", "secondNumber"].forEach(id => {
+    $(id).addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        calculateNumber();
+      }
+    });
+  });
+}
+
+ // =====================================================
+ // BASELAB — INTERACTIVE STEP-BY-STEP SOLUTIONS
+ // =====================================================
+
+function createSolutionLine(text) {
+  const line = document.createElement("p");
+  line.textContent = String(text);
+  return line;
+}
+
+function renderSolutionStep() {
+  const container = $("solutionSteps");
+
+  if (!container || currentSolution.length === 0) {
     return;
   }
 
   const step = currentSolution[solutionIndex];
-  const total = currentSolution.length;
 
-  $("solutionCounter").textContent =
-    `Step ${solutionIndex + 1} of ${total}`;
+  container.innerHTML = "";
 
-  const percent = Math.round(
-    ((solutionIndex + 1) / total) * 100
-  );
-
-  $("solutionPercent").textContent = `${percent}%`;
-  $("solutionProgressFill").style.width = `${percent}%`;
-
-  const container = $("solutionSteps");
-  container.replaceChildren();
-
-  const card = createElement(
-    "div",
-    "solution-step"
-  );
-
-  card.appendChild(
-    createElement("h3", "", step.title)
-  );
+  const heading = document.createElement("h3");
+  heading.textContent = step.title || "Solution Step";
+  container.appendChild(heading);
 
   if (step.description) {
-    card.appendChild(
-      createElement(
-        "p",
-        "solution-description",
-        step.description
-      )
-    );
+    const description = document.createElement("p");
+    description.textContent = step.description;
+    container.appendChild(description);
   }
 
   if (step.type === "text") {
-    renderTextStep(step, card);
-  } else if (step.type === "table") {
-    renderTableStep(step, card);
-  } else if (step.type === "paper") {
-    renderPaperStep(step, card);
-  } else if (step.type === "final") {
-    card.appendChild(
-      createElement(
-        "div",
-        "final-answer",
-        step.answer
-      )
-    );
+    const lines = document.createElement("div");
+    lines.className = "solution-lines";
+
+    (step.lines || []).forEach(text => {
+      lines.appendChild(createSolutionLine(text));
+    });
+
+    container.appendChild(lines);
   }
 
-  container.appendChild(card);
+  if (step.type === "table") {
+    const tableWrapper = document.createElement("div");
+    tableWrapper.className = "solution-table-wrapper";
+
+    const table = document.createElement("table");
+    table.className = "solution-table";
+
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+
+    (step.headers || []).forEach(headerText => {
+      const th = document.createElement("th");
+      th.textContent = String(headerText);
+      headerRow.appendChild(th);
+    });
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+
+    (step.rows || []).forEach((row, rowIndex) => {
+      const tr = document.createElement("tr");
+
+      row.forEach((value, columnIndex) => {
+        const td = document.createElement("td");
+        td.textContent = String(value);
+
+        if (
+          rowIndex === step.highlightedRow ||
+          columnIndex === step.highlightedColumn
+        ) {
+          td.classList.add("highlighted-cell");
+        }
+
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    tableWrapper.appendChild(table);
+    container.appendChild(tableWrapper);
+
+    if (step.note) {
+      const note = document.createElement("p");
+      note.className = "solution-note";
+      note.textContent = step.note;
+      container.appendChild(note);
+    }
+  }
+
+  if (step.type === "final") {
+    const answer = document.createElement("div");
+    answer.className = "solution-final-answer";
+    answer.textContent = String(step.answer);
+    container.appendChild(answer);
+  }
+
+  if (step.type === "paper") {
+    (step.sections || []).forEach(section => {
+      const sectionElement = document.createElement("div");
+      sectionElement.className = "paper-section";
+
+      if (section.title) {
+        const sectionTitle = document.createElement("h4");
+        sectionTitle.textContent = section.title;
+        sectionElement.appendChild(sectionTitle);
+      }
+
+      (section.lines || []).forEach(line => {
+        sectionElement.appendChild(createSolutionLine(line));
+      });
+
+      container.appendChild(sectionElement);
+    });
+
+    if (step.answer !== undefined) {
+      const answer = document.createElement("div");
+      answer.className = "solution-final-answer";
+      answer.textContent = String(step.answer);
+      container.appendChild(answer);
+    }
+  }
+
+  const total = currentSolution.length;
+  const current = solutionIndex + 1;
+  const percentage = Math.round((current / total) * 100);
+
+  $("solutionCounter").textContent =
+    `Step ${current} of ${total}`;
+
+  $("solutionPercent").textContent =
+    `${percentage}%`;
+
+  $("solutionProgressFill").style.width =
+    `${percentage}%`;
 
   $("previousStepBtn").disabled =
     solutionIndex === 0;
 
   $("nextStepBtn").disabled =
-    solutionIndex === total - 1;
+    solutionIndex >= total - 1;
+}
 
-  $("playStepBtn").textContent =
-    solutionTimer === null
-      ? "▶ Play All"
-      : "⏸ Pause";
+// =====================================================
+// SHOW / HIDE SOLUTION
+// =====================================================
+
+function toggleSolution() {
+  const section = $("solutionSection");
+  const button = $("solutionBtn");
+
+  if (!currentSolution.length) return;
+
+  if (!section.hidden) {
+    section.hidden = true;
+    button.textContent = "Show Step-by-Step Solution";
+    stopSolutionPlayback();
+    return;
+  }
+
+  section.hidden = false;
+  button.textContent = "Hide Step-by-Step Solution";
+
+  solutionIndex = 0;
+  renderSolutionStep();
+
+  section.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
 }
 
 // =====================================================
 // SOLUTION NAVIGATION
 // =====================================================
 
-$("solutionBtn").addEventListener("click", () => {
-  const section = $("solutionSection");
-
-  if (!section.hidden) {
-    stopAnimation();
-    section.hidden = true;
-
-    $("solutionBtn").textContent =
-      "Show Step-by-Step Solution";
-
-    return;
+function nextSolutionStep() {
+  if (solutionIndex < currentSolution.length - 1) {
+    solutionIndex++;
+    renderSolutionStep();
+  } else {
+    stopSolutionPlayback();
+    updatePlayButton();
   }
+}
 
-  solutionIndex = 0;
-  section.hidden = false;
-
-  $("solutionBtn").textContent =
-    "Hide Step-by-Step Solution";
-
-  renderSolution();
-
-  section.scrollIntoView({
-    behavior: "smooth",
-    block: "start"
-  });
-});
-
-$("previousStepBtn").addEventListener("click", () => {
-  stopAnimation();
+function previousSolutionStep() {
+  stopSolutionPlayback();
+  updatePlayButton();
 
   if (solutionIndex > 0) {
     solutionIndex--;
+    renderSolutionStep();
   }
+}
 
-  renderSolution();
-});
+function restartSolution() {
+  stopSolutionPlayback();
+  updatePlayButton();
 
-$("nextStepBtn").addEventListener("click", () => {
-  stopAnimation();
+  solutionIndex = 0;
+  renderSolutionStep();
+}
 
-  if (solutionIndex < currentSolution.length - 1) {
-    solutionIndex++;
-  }
+function updatePlayButton() {
+  const button = $("playStepBtn");
 
-  renderSolution();
-});
+  if (!button) return;
 
-$("playStepBtn").addEventListener("click", () => {
+  button.textContent =
+    solutionTimer === null ? "▶ Play All" : "Ⅱ Pause";
+}
+
+// =====================================================
+// AUTO-PLAY SOLUTION STEPS
+// =====================================================
+
+function toggleSolutionPlayback() {
+  if (!currentSolution.length) return;
+
   if (solutionTimer !== null) {
-    stopAnimation();
-    renderSolution();
+    stopSolutionPlayback();
+    updatePlayButton();
     return;
   }
 
-  if (solutionIndex === currentSolution.length - 1) {
+  if (solutionIndex >= currentSolution.length - 1) {
     solutionIndex = 0;
+    renderSolutionStep();
   }
 
   solutionTimer = setInterval(() => {
-    if (solutionIndex < currentSolution.length - 1) {
-      solutionIndex++;
-      renderSolution();
-    } else {
-      stopAnimation();
-      renderSolution();
-    }
-  }, 2500);
-
-  renderSolution();
-});
-
-$("resetStepBtn").addEventListener("click", () => {
-  stopAnimation();
-  solutionIndex = 0;
-  renderSolution();
-});
-
-// =====================================================
-// SWAP BASES
-// =====================================================
-
-$("swapBtn").addEventListener("click", () => {
-  const from = $("fromBase").value;
-  const to = $("toBase").value;
-  const previous = lastConversion;
-
-  $("fromBase").value = to;
-  $("toBase").value = from;
-
-  if (previous) {
-    if (
-      !previous.output.repeating &&
-      !previous.output.truncated
-    ) {
-      $("convertNumber").value =
-        previous.output.text;
-    } else {
-      $("convertNumber").value = "";
-
-      showError(
-        "The previous output repeats or exceeds " +
-        "the safety limit. Enter a finite number " +
-        "in the new source base."
-      );
-
+    if (solutionIndex >= currentSolution.length - 1) {
+      stopSolutionPlayback();
+      updatePlayButton();
       return;
     }
-  }
 
-  hideResults();
-});
+    solutionIndex++;
+    renderSolutionStep();
 
-// =====================================================
-// RESET BUTTONS
-// =====================================================
+    if (solutionIndex >= currentSolution.length - 1) {
+      stopSolutionPlayback();
+      updatePlayButton();
+    }
+  }, 1800);
 
-$("resetConvertBtn").addEventListener("click", () => {
-  $("convertNumber").value = "";
-  $("fromBase").value = "10";
-  $("toBase").value = "2";
-
-  hideResults();
-});
-
-$("resetCalcBtn").addEventListener("click", () => {
-  $("firstNumber").value = "";
-  $("secondNumber").value = "";
-
-  $("firstBase").value = "2";
-  $("secondBase").value = "2";
-  $("resultBase").value = "2";
-  $("operator").value = "+";
-
-  hideResults();
-});
+  updatePlayButton();
+}
 
 // =====================================================
-// COPY RESULT
+// DESKTOP AND MOBILE WORKSPACE TABS
 // =====================================================
 
-$("copyBtn").addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText(currentResult);
+function initializeWorkspaceTabs() {
+  document.querySelectorAll(".tab").forEach(button => {
+    button.addEventListener("click", () => {
+      const target = button.dataset.tab;
+      const targetSection = $(target);
 
-    $("copyBtn").textContent = "Copied!";
+      if (!targetSection) return;
 
-    setTimeout(() => {
-      $("copyBtn").textContent = "Copy";
-    }, 1500);
-  } catch {
-    $("copyBtn").textContent = "Copy Failed";
-  }
-});
+      document.querySelectorAll(".tab").forEach(tab => {
+        tab.classList.remove("active");
+        tab.setAttribute("aria-selected", "false");
+      });
+
+      document.querySelectorAll(".tab-content").forEach(section => {
+        section.classList.remove("active");
+      });
+
+      button.classList.add("active");
+      button.setAttribute("aria-selected", "true");
+
+      targetSection.classList.add("active");
+
+      hideResults();
+
+      if (window.innerWidth <= 760) {
+        targetSection.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }
+    });
+  });
+}
 
 // =====================================================
-// CLEAR OLD RESULTS WHEN INPUTS CHANGE
+// MOBILE HAMBURGER NAVIGATION
 // =====================================================
 
-document.querySelectorAll("input, select").forEach(
-  element => {
-    element.addEventListener("input", hideResults);
-    element.addEventListener("change", hideResults);
-  }
-);
+function initializeMobileNavigation() {
+  const toggle = $("mobileMenuToggle");
 
-// =====================================================
-// END OF SCRIPT
-// =====================================================
-
- // ==========================================
- // BASELAB — MOBILE HAMBURGER NAVIGATION
- // ==========================================
-
-document.addEventListener("DOMContentLoaded", () => {
-  const toggle = document.getElementById("mobileMenuToggle");
-  const menu = document.getElementById("mobileNavigation");
+  const menu =
+    $("mobileNavigation") ||
+    $("mobileMenuContent");
 
   if (!toggle || !menu) return;
 
   function closeMenu() {
     menu.classList.remove("is-open");
-    toggle.setAttribute("aria-expanded", "false");
-    toggle.setAttribute("aria-label", "Open navigation menu");
+
+    toggle.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+
+    toggle.setAttribute(
+      "aria-label",
+      "Open navigation menu"
+    );
   }
 
   toggle.addEventListener("click", () => {
-    const open = !menu.classList.contains("is-open");
+    const isOpen = menu.classList.toggle("is-open");
 
-    menu.classList.toggle("is-open", open);
-    toggle.setAttribute("aria-expanded", String(open));
+    toggle.setAttribute(
+      "aria-expanded",
+      String(isOpen)
+    );
+
     toggle.setAttribute(
       "aria-label",
-      open ? "Close navigation menu" : "Open navigation menu"
+      isOpen
+        ? "Close navigation menu"
+        : "Open navigation menu"
     );
   });
 
-  menu.querySelectorAll(".tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      if (window.matchMedia("(max-width: 760px)").matches) {
+  menu.querySelectorAll(".tab").forEach(button => {
+    button.addEventListener("click", () => {
+      if (window.innerWidth <= 760) {
         closeMenu();
       }
     });
@@ -1794,9 +1560,62 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  document.addEventListener("click", event => {
+    if (
+      window.innerWidth <= 760 &&
+      !menu.contains(event.target) &&
+      !toggle.contains(event.target)
+    ) {
+      closeMenu();
+    }
+  });
+
   window.addEventListener("resize", () => {
     if (window.innerWidth > 760) {
       closeMenu();
     }
   });
+}
+
+// =====================================================
+// INITIALIZE ALL BASELAB FEATURES
+// =====================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+  populateBaseSelectors();
+
+  initializeCalculatorControls();
+
+  initializeWorkspaceTabs();
+
+  initializeMobileNavigation();
+
+  $("solutionBtn").addEventListener(
+    "click",
+    toggleSolution
+  );
+
+  $("nextStepBtn").addEventListener(
+    "click",
+    () => {
+      stopSolutionPlayback();
+      updatePlayButton();
+      nextSolutionStep();
+    }
+  );
+
+  $("previousStepBtn").addEventListener(
+    "click",
+    previousSolutionStep
+  );
+
+  $("playStepBtn").addEventListener(
+    "click",
+    toggleSolutionPlayback
+  );
+
+  $("resetStepBtn").addEventListener(
+    "click",
+    restartSolution
+  );
 });
