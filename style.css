@@ -2,7 +2,7 @@
 /* =========================================
    BASELAB — COMPLETE RESPONSIVE STYLESHEET
    Desktop + Tablet + Mobile
-   Slow Solar-System Animation
+   Fixed Slow Solar-System Animation
    ========================================= */
 
 :root {
@@ -587,7 +587,7 @@ select:focus-visible,
 }
 
 /* =========================================
-   SOLAR SYSTEM — SLOW ORBIT ANIMATION
+   FIXED SOLAR SYSTEM ANIMATION
    ========================================= */
 
 .hero-decoration {
@@ -599,6 +599,7 @@ select:focus-visible,
   overflow: visible;
 }
 
+/* Visible stationary orbit circles */
 .hero-orbit {
   position: absolute;
   display: block;
@@ -607,6 +608,7 @@ select:focus-visible,
   border: 1px solid rgba(255, 255, 255, .25);
   border-radius: 50%;
   transform: translate(-50%, -50%);
+  animation: none !important;
 }
 
 .hero-orbit.orbit-one {
@@ -619,6 +621,7 @@ select:focus-visible,
   height: 250px;
 }
 
+/* Stationary infinity symbol */
 .hero-center-symbol {
   position: absolute;
   top: 50%;
@@ -628,8 +631,10 @@ select:focus-visible,
   font-size: 125px;
   font-weight: 700;
   transform: translate(-50%, -50%);
+  animation: none !important;
 }
 
+/* Orbiting number labels */
 .floating-number {
   position: absolute;
   top: 50%;
@@ -648,27 +653,28 @@ select:focus-visible,
   will-change: transform;
 }
 
-/* Inner orbit — 90 seconds */
+/* 101101 — inner orbit, 4 minutes */
 .floating-number.number-one {
   --orbit-radius: 90px;
-  animation: solarOrbit 90s linear infinite;
-  animation-delay: -15s;
-}
-
-/* Outer orbit — 120 seconds */
-.floating-number.number-two {
-  --orbit-radius: 125px;
-  animation: solarOrbit 120s linear infinite;
+  animation: solarOrbit 240s linear infinite;
   animation-delay: -60s;
 }
 
-/* Outer orbit — 120 seconds, different position */
-.floating-number.number-three {
+/* 255 — outer orbit, 6 minutes */
+.floating-number.number-two {
   --orbit-radius: 125px;
-  animation: solarOrbit 120s linear infinite;
-  animation-delay: -20s;
+  animation: solarOrbit 360s linear infinite;
+  animation-delay: -90s;
 }
 
+/* A7.F — outer orbit, opposite position */
+.floating-number.number-three {
+  --orbit-radius: 125px;
+  animation: solarOrbit 360s linear infinite;
+  animation-delay: -270s;
+}
+
+/* Smooth circular orbit, text remains upright */
 @keyframes solarOrbit {
   from {
     transform:
@@ -768,7 +774,9 @@ select:focus-visible,
 
 .tab-content.active {
   display: block;
-  animation: fadeIn .3s ease;
+  opacity: 1;
+  visibility: visible;
+  animation: none;
 }
 
 .workspace-card,
@@ -1421,7 +1429,7 @@ select:focus-visible,
     font-size: 16px;
   }
 
-  /* Quick Reference stays available */
+  /* Quick Reference */
 
   .sidebar-divider {
     display: block;
@@ -1516,7 +1524,7 @@ select:focus-visible,
     font-size: 10px;
   }
 
-  /* Solar system moves BELOW the text */
+  /* Solar system below the hero text */
 
   .hero-decoration {
     position: relative;
@@ -1565,7 +1573,7 @@ select:focus-visible,
     --orbit-radius: 102.5px;
   }
 
-  /* Statistics stack vertically */
+  /* Statistics */
 
   .stats-grid {
     grid-template-columns: 1fr;
@@ -1641,7 +1649,7 @@ select:focus-visible,
     gap: 15px;
   }
 
-  /* Inputs: prevent iPhone auto-zoom */
+  /* Inputs */
 
   .input-group input,
   .input-group select {
@@ -1776,20 +1784,96 @@ select:focus-visible,
   }
 }
 
-/* ACCESSIBILITY */
+/* =========================================
+   ACCESSIBILITY
+   ========================================= */
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 45s !important;
-    transition-duration: 45s !important;
-    scroll-behavior: auto !important;
+  html {
+    scroll-behavior: auto;
   }
 
+  /* Stop decorative motion when requested */
   .floating-number {
+    animation: none !important;
     transform:
       translate(-50%, -50%)
+      rotate(0deg)
       translateX(var(--orbit-radius));
+  }
+
+  .floating-number.number-three {
+    transform:
+      translate(-50%, -50%)
+      rotate(180deg)
+      translateX(var(--orbit-radius))
+      rotate(-180deg);
+  }
+
+  .tab-content.active,
+  .solution-step {
+    animation: none;
+  }
+}
+
+/* =========================================
+   BASELAB — RESTORE SLOW ORBIT ROTATION
+   ========================================= */
+
+/* Inner orbit: 4 minutes per rotation */
+.floating-number.number-one {
+  --orbit-radius: 90px;
+  animation: solarOrbit 90s linear infinite !important;
+  animation-delay: -60s !important;
+}
+
+/* Outer orbit: 6 minutes per rotation */
+.floating-number.number-two {
+  --orbit-radius: 125px;
+  animation: solarOrbit 60s linear infinite !important;
+  animation-delay: -90s !important;
+}
+
+/* Opposite side of the outer orbit */
+.floating-number.number-three {
+  --orbit-radius: 125px;
+  animation: solarOrbit 30s linear infinite !important;
+  animation-delay: -270s !important;
+}
+
+@keyframes solarOrbit {
+  from {
+    transform:
+      translate(-50%, -50%)
+      rotate(0deg)
+      translateX(var(--orbit-radius))
+      rotate(0deg);
+  }
+
+  to {
+    transform:
+      translate(-50%, -50%)
+      rotate(360deg)
+      translateX(var(--orbit-radius))
+      rotate(-360deg);
+  }
+}
+
+/* Keep mobile orbit sizes */
+@media (max-width: 760px) {
+  .floating-number.number-one {
+    --orbit-radius: 67.5px;
+  }
+
+  .floating-number.number-two,
+  .floating-number.number-three {
+    --orbit-radius: 102.5px;
+  }
+}
+
+@media (max-width: 380px) {
+  .floating-number.number-two,
+  .floating-number.number-three {
+    --orbit-radius: 90px;
   }
 }
