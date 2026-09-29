@@ -1752,3 +1752,51 @@ document.querySelectorAll("input, select").forEach(
 // =====================================================
 // END OF SCRIPT
 // =====================================================
+
+ // ==========================================
+ // BASELAB — MOBILE HAMBURGER NAVIGATION
+ // ==========================================
+
+document.addEventListener("DOMContentLoaded", () => {
+  const toggle = document.getElementById("mobileMenuToggle");
+  const menu = document.getElementById("mobileNavigation");
+
+  if (!toggle || !menu) return;
+
+  function closeMenu() {
+    menu.classList.remove("is-open");
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Open navigation menu");
+  }
+
+  toggle.addEventListener("click", () => {
+    const open = !menu.classList.contains("is-open");
+
+    menu.classList.toggle("is-open", open);
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.setAttribute(
+      "aria-label",
+      open ? "Close navigation menu" : "Open navigation menu"
+    );
+  });
+
+  menu.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      if (window.matchMedia("(max-width: 760px)").matches) {
+        closeMenu();
+      }
+    });
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      closeMenu();
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 760) {
+      closeMenu();
+    }
+  });
+});
