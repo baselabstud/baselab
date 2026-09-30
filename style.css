@@ -3174,3 +3174,107 @@ select:focus-visible,
   .floating-number.number-two, .floating-number.number-three { --orbit-radius: 67.5px; }
   .stat-label { font-size: 8px; }
 }
+/* =========================================================
+   BASELAB MOBILE HAMBURGER — FINAL OVERRIDE
+   Desktop interface remains unchanged
+   ========================================================= */
+
+@media screen and (max-width: 760px) {
+
+  /* Mobile header */
+  .sidebar {
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 12px 16px !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  .sidebar-brand {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Hamburger button */
+  #mobileMenuToggle.mobile-menu-toggle {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    width: 42px !important;
+    height: 42px !important;
+
+    margin-left: auto !important;
+    padding: 0 !important;
+
+    gap: 5px !important;
+
+    border: 1px solid #e5e9f5 !important;
+    border-radius: 11px !important;
+
+    background: #f8f9ff !important;
+
+    cursor: pointer !important;
+
+    flex-shrink: 0 !important;
+  }
+
+  #mobileMenuToggle.mobile-menu-toggle > span {
+    display: block !important;
+
+    width: 20px !important;
+    height: 2px !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    border: 0 !important;
+    border-radius: 10px !important;
+
+    background: #5147e8 !important;
+  }
+
+  /* Navigation CLOSED by default */
+  #mobileNavigation.mobile-navigation {
+    display: none !important;
+
+    width: 100% !important;
+
+    padding-top: 18px !important;
+  }
+
+  /* Navigation OPEN after hamburger click */
+  #mobileNavigation.mobile-navigation.is-open {
+    display: block !important;
+  }
+
+  /* Workspace buttons */
+  #mobileNavigation .sidebar-nav {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  #mobileNavigation .nav-item {
+    width: 100% !important;
+  }
+
+  /* Quick Reference */
+  #mobileNavigation .base-reference {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* Main content stays underneath mobile header */
+  .dashboard-main {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+}
