@@ -5419,100 +5419,113 @@ function initializeQuickReference() {
 // =====================================================
 
 function initializeMobileNavigation() {
+ function initializeMobileNavigation() {
   const toggle =
     $("mobileMenuToggle") ||
     document.querySelector(
       ".mobile-menu-toggle"
     );
 
-  const sidebar =
-    $("sidebar") ||
-    document.querySelector(
-      ".sidebar"
-    );
+  const menu =
+    $("mobileNavigation") ||
+    $("mobileMenuContent");
 
   if (
     !toggle ||
-    !sidebar
+    !menu
   ) {
     return;
   }
 
-  function closeNavigation() {
-    sidebar.classList.remove(
-      "mobile-open"
+  function closeMenu() {
+    menu.classList.remove(
+      "is-open"
+    );
+
+    toggle.classList.remove(
+      "is-open"
     );
 
     toggle.setAttribute(
       "aria-expanded",
       "false"
     );
+
+    toggle.setAttribute(
+      "aria-label",
+      "Open navigation menu"
+    );
   }
+
+  function openMenu() {
+    menu.classList.add(
+      "is-open"
+    );
+
+    toggle.classList.add(
+      "is-open"
+    );
+
+    toggle.setAttribute(
+      "aria-expanded",
+      "true"
+    );
+
+    toggle.setAttribute(
+      "aria-label",
+      "Close navigation menu"
+    );
+  }
+
+  // =================================================
+  // BURGER BUTTON
+  // =================================================
 
   toggle.addEventListener(
     "click",
     event => {
+      event.preventDefault();
       event.stopPropagation();
 
-      const opened =
-        sidebar.classList.toggle(
-          "mobile-open"
+      const isOpen =
+        menu.classList.contains(
+          "is-open"
         );
 
-      toggle.setAttribute(
-        "aria-expanded",
-        String(opened)
-      );
+      if (isOpen) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
     }
   );
 
-  /*
-    Close the sidebar after choosing a navigation item
-    on smaller screens.
-  */
+  // =================================================
+  // CLOSE AFTER SELECTING A MENU ITEM
+  // =================================================
 
-  sidebar
+  menu
     .querySelectorAll(
       ".tab"
     )
     .forEach(
-      item => {
-        item.addEventListener(
+      button => {
+        button.addEventListener(
           "click",
           () => {
             if (
-              window.innerWidth <=
-              900
+              window.innerWidth <= 760
             ) {
-              closeNavigation();
+              closeMenu();
             }
           }
         );
       }
     );
 
-  document.addEventListener(
-    "click",
-    event => {
-      if (
-        window.innerWidth >
-        900
-      ) {
-        return;
-      }
-
-      if (
-        !sidebar.contains(
-          event.target
-        ) &&
-        !toggle.contains(
-          event.target
-        )
-      ) {
-        closeNavigation();
-      }
-    }
-  );
+  // =================================================
+  // CLOSE WITH ESCAPE
+  // =================================================
 
   document.addEventListener(
     "keydown",
@@ -5521,19 +5534,43 @@ function initializeMobileNavigation() {
         event.key ===
         "Escape"
       ) {
-        closeNavigation();
+        closeMenu();
       }
     }
   );
+
+  // =================================================
+  // CLOSE WHEN CLICKING OUTSIDE
+  // =================================================
+
+  document.addEventListener(
+    "click",
+    event => {
+      if (
+        window.innerWidth <= 760 &&
+        !menu.contains(
+          event.target
+        ) &&
+        !toggle.contains(
+          event.target
+        )
+      ) {
+        closeMenu();
+      }
+    }
+  );
+
+  // =================================================
+  // RESET WHEN RETURNING TO DESKTOP
+  // =================================================
 
   window.addEventListener(
     "resize",
     () => {
       if (
-        window.innerWidth >
-        900
+        window.innerWidth > 760
       ) {
-        closeNavigation();
+        closeMenu();
       }
     }
   );
