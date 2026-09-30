@@ -310,7 +310,7 @@ function finalBlock(title, description, answer) {
 }
 
 // =====================================================
-// POSITIONAL CONVERSION
+// POSITIONAL CONVERSION — TRADITIONAL METHOD
 // =====================================================
 
 function positionalSteps(input, base, title) {
@@ -324,227 +324,487 @@ function positionalSteps(input, base, title) {
   const [integerText = "", fractionText = ""] =
     unsigned.split(".");
 
-  const rows = [];
+  const lines = [];
+  const terms = [];
+
+  // -----------------------------------------
+  // Whole-number positions
+  // -----------------------------------------
 
   for (let i = 0; i < integerText.length; i++) {
     const character = integerText[i];
     const digit = DIGITS.indexOf(character);
     const power = integerText.length - i - 1;
-    const place = BigInt(base) ** BigInt(power);
 
-    if (rows.length < MAX_TABLE_ROWS) {
-      rows.push([
-        character,
-        `${base}^${power}`,
-        `${digit} × ${place}`,
-        (BigInt(digit) * place).toString()
-      ]);
-    }
+    const place =
+      BigInt(base) ** BigInt(power);
+
+    const value =
+      BigInt(digit) * place;
+
+    terms.push({
+      expression: `${character} × ${base}^${power}`,
+      expanded: `${digit} × ${place}`,
+      value: value.toString()
+    });
   }
+
+  // -----------------------------------------
+  // Fractional positions
+  // -----------------------------------------
 
   for (let i = 0; i < fractionText.length; i++) {
     const character = fractionText[i];
-    const digit = BigInt(DIGITS.indexOf(character));
+    const digit = BigInt(
+      DIGITS.indexOf(character)
+    );
+
+    const power = i + 1;
 
     const denominator =
-      BigInt(base) ** BigInt(i + 1);
+      BigInt(base) ** BigInt(power);
 
-    if (rows.length < MAX_TABLE_ROWS) {
-      rows.push([
-        character,
-        `${base}^(-${i + 1})`,
-        `${digit} × ${base}^(-${i + 1})`,
-        decimalDescription(
-          makeFraction(digit, denominator)
-        )
-      ]);
-    }
+    const value =
+      makeFraction(digit, denominator);
+
+    terms.push({
+      expression:
+        `${character} × ${base}^(-${power})`,
+      expanded:
+        `${character} × 1/${denominator}`,
+      value:
+        decimalDescription(value)
+    });
   }
 
-  let note =
-    `${negative ? "Apply the negative sign. " : ""}` +
-    `Decimal result: ${decimalDescription(
+  // -----------------------------------------
+  // Traditional positional expansion
+  // -----------------------------------------
+
+  lines.push(
+    unsigned +
+    (negative ? "  (negative)" : "")
+  );
+
+  lines.push("");
+
+  if (terms.length) {
+    lines.push(
+      "= " +
+      terms
+        .map(term => term.expression)
+        .join(" + ")
+    );
+
+    lines.push("");
+
+    lines.push(
+      "= " +
+      terms
+        .map(term => term.expanded)
+        .join(" + ")
+    );
+
+    lines.push("");
+
+    lines.push(
+      "= " +
+      terms
+        .map(term => term.value)
+        .join(" + ")
+    );
+  }
+
+  const decimalValue =
+    decimalDescription(
       parseNumber(input, base)
-    )}`;
+    );
 
-  if (
-    integerText.length + fractionText.length >
-    MAX_TABLE_ROWS
-  ) {
-    note +=
-      ` Only the first ${MAX_TABLE_ROWS} rows are displayed.`;
+  lines.push("");
+  lines.push("─".repeat(
+    Math.max(
+      12,
+      decimalValue.length + 4
+    )
+  ));
+
+  lines.push(
+    `= ${decimalValue}`
+  );
+
+  if (negative) {
+    lines.push("");
+    lines.push(
+      "Apply the negative sign to the result."
+    );
   }
 
-  return tableBlock(
+  return paperBlock(
     title,
-    `Expand the digits using powers of ${base}.`,
-    [
-      "Digit",
-      "Place Value",
-      "Calculation",
-      "Decimal Value"
-    ],
-    rows,
-    note
+    `Expand each digit according to its Base ${base} place value.`,
+    lines,
+    `Decimal value: ${decimalValue}`
   );
 }
 
+
 // =====================================================
-// CONVERT WHOLE-NUMBER PORTION
+// TRADITIONAL REPEATED LONG DIVISION
+// Whole-number base conversion
 // =====================================================
 
 function integerConversionSteps(value, base) {
-  let whole = absolute(value.n) / value.d;
+  let whole =
+    absolute(value.n) / value.d;
 
   if (whole === 0n) {
-    return textBlock(
+    return paperBlock(
       "Convert the Whole-Number Portion",
-      "The integer portion is zero.",
-      ["Whole-number result: 0"]
+      "The whole-number portion is zero.",
+      [
+        "0",
+        "",
+        "Whole-number result: 0"
+      ],
+      "No repeated division is needed."
     );
   }
 
-  const rows = [];
-  const digits = [];
   const radix = BigInt(base);
+  const workings = [];
+  const digits = [];
 
   while (whole > 0n) {
-    const quotient = whole / radix;
-    const remainder = whole % radix;
-    const digit = DIGITS[Number(remainder)];
+    const dividend = whole;
+    const quotient =
+      dividend / radix;
 
-    if (rows.length < MAX_TABLE_ROWS) {
-      rows.push([
-        whole.toString(),
-        String(base),
-        quotient.toString(),
-        digit
-      ]);
-    }
+    const remainder =
+      dividend % radix;
 
-    digits.push(digit);
+    const remainderDigit =
+      DIGITS[Number(remainder)];
+
+    workings.push({
+      dividend,
+      quotient,
+      remainder,
+      remainderDigit
+    });
+
+    digits.push(remainderDigit);
+
     whole = quotient;
   }
 
-  let note =
-    `Whole-number result: ${digits.reverse().join("")}`;
+  const lines = [];
 
-  if (digits.length > MAX_TABLE_ROWS) {
-    note +=
-      ` Only the first ${MAX_TABLE_ROWS} division rows are displayed.`;
+  workings.forEach((work, index) => {
+    const dividendText =
+      work.dividend.toString();
+
+    const quotientText =
+      work.quotient.toString();
+
+    const divisorText =
+      String(base);
+
+    const remainderText =
+      work.remainderDigit;
+
+    const insideWidth =
+      Math.max(
+        dividendText.length,
+        quotientText.length,
+        3
+      );
+
+    const prefix =
+      " ".repeat(
+        divisorText.length + 3
+      );
+
+    lines.push(
+      prefix +
+      quotientText.padStart(
+        insideWidth
+      ) +
+      `  R${remainderText}`
+    );
+
+    lines.push(
+      prefix +
+      "─".repeat(insideWidth)
+    );
+
+    lines.push(
+      divisorText +
+      " │ " +
+      dividendText.padStart(
+        insideWidth
+      )
+    );
+
+    if (index < workings.length - 1) {
+      lines.push("");
+    }
+  });
+
+  const answer =
+    digits.slice().reverse().join("");
+
+  lines.push("");
+  lines.push(
+    "Read the remainders from bottom to top:"
+  );
+
+  lines.push("");
+
+  digits
+    .slice()
+    .reverse()
+    .forEach(digit => {
+      lines.push(`↑ ${digit}`);
+    });
+
+  lines.push("");
+  lines.push(`Result: ${answer}`);
+
+  if (value.n < 0n) {
+    lines.push("");
+    lines.push(
+      "Apply the negative sign."
+    );
   }
 
-  return tableBlock(
+  return paperBlock(
     "Convert the Whole-Number Portion",
-    `Divide repeatedly by ${base}. Read the remainders from bottom to top.`,
-    [
-      "Dividend",
-      "Divisor",
-      "Quotient",
-      "Remainder"
-    ],
-    rows,
-    note
+    `Use repeated long division by ${base}. Keep each remainder, then read the remainders from bottom to top.`,
+    lines,
+    `Whole-number result: ${
+      value.n < 0n ? "-" : ""
+    }${answer}`
   );
 }
 
+
 // =====================================================
-// CONVERT FRACTIONAL PORTION
+// TRADITIONAL STACKED MULTIPLICATION
+// Fractional base conversion
 // =====================================================
 
 function fractionalConversionSteps(value, base) {
-  const numerator = absolute(value.n);
-  const denominator = value.d;
+  const numerator =
+    absolute(value.n);
 
-  let remainder = numerator % denominator;
+  const denominator =
+    value.d;
+
+  let remainder =
+    numerator % denominator;
 
   if (remainder === 0n) {
-    return textBlock(
+    return paperBlock(
       "Convert the Fractional Portion",
       "There is no fractional portion.",
-      ["No additional conversion is needed."]
+      [
+        "Fractional part = 0",
+        "",
+        "No additional conversion is needed."
+      ]
     );
   }
 
-  const rows = [];
-  const seen = new Map();
-  const digits = [];
   const radix = BigInt(base);
+  const seen = new Map();
+
+  const digits = [];
+  const workings = [];
 
   let repeatStart = -1;
+  let truncated = false;
 
-  while (
-    remainder !== 0n &&
-    digits.length < MAX_FRACTION_DIGITS
-  ) {
-    const key = remainder.toString();
+  while (remainder !== 0n) {
+    const key =
+      remainder.toString();
 
     if (seen.has(key)) {
-      repeatStart = seen.get(key);
+      repeatStart =
+        seen.get(key);
       break;
     }
 
-    seen.set(key, digits.length);
+    if (
+      digits.length >=
+      MAX_FRACTION_DIGITS
+    ) {
+      truncated = true;
+      break;
+    }
 
-    const before = makeFraction(
-      remainder,
-      denominator
+    seen.set(
+      key,
+      digits.length
     );
 
-    const product = remainder * radix;
-    const digit = product / denominator;
+    const before =
+      makeFraction(
+        remainder,
+        denominator
+      );
 
-    remainder = product % denominator;
+    const product =
+      remainder * radix;
 
-    const digitText = DIGITS[Number(digit)];
+    const digit =
+      product / denominator;
+
+    const nextRemainder =
+      product % denominator;
+
+    const digitText =
+      DIGITS[Number(digit)];
+
+    const beforeText =
+      decimalDescription(before);
+
+    const productValue =
+      makeFraction(
+        product,
+        denominator
+      );
+
+    const productText =
+      decimalDescription(
+        productValue
+      );
+
+    workings.push({
+      beforeText,
+      productText,
+      digitText
+    });
+
     digits.push(digitText);
 
-    if (rows.length < MAX_TABLE_ROWS) {
-      rows.push([
-        String(digits.length),
-        decimalDescription(before),
-        `${decimalDescription(before)} × ${base}`,
-        digitText,
-        decimalDescription(
-          makeFraction(remainder, denominator)
-        )
-      ]);
-    }
+    remainder =
+      nextRemainder;
   }
 
-  const formatted = formatNumber(value, base);
+  const lines = [];
+
+  workings.forEach(
+    (work, index) => {
+      const top =
+        work.beforeText;
+
+      const multiplier =
+        `× ${base}`;
+
+      const product =
+        work.productText;
+
+      const width =
+        Math.max(
+          top.length,
+          multiplier.length,
+          product.length
+        );
+
+      lines.push(
+        top.padStart(width)
+      );
+
+      lines.push(
+        multiplier.padStart(width)
+      );
+
+      lines.push(
+        "─".repeat(width)
+      );
+
+      lines.push(
+        product.padStart(width)
+      );
+
+      lines.push(
+        " ".repeat(
+          Math.max(0, width - 1)
+        ) +
+        "↑"
+      );
+
+      lines.push(
+        " ".repeat(
+          Math.max(0, width - 1)
+        ) +
+        work.digitText
+      );
+
+      if (
+        index <
+        workings.length - 1
+      ) {
+        lines.push("");
+      }
+    }
+  );
+
+  let fractionText =
+    digits.join("");
+
+  if (repeatStart >= 0) {
+    fractionText =
+      fractionText.slice(
+        0,
+        repeatStart
+      ) +
+      "(" +
+      fractionText.slice(
+        repeatStart
+      ) +
+      ")";
+  } else if (truncated) {
+    fractionText += "…";
+  }
+
+  lines.push("");
+  lines.push(
+    "Read the extracted whole-number digits from top to bottom:"
+  );
+
+  lines.push("");
+
+  digits.forEach(digit => {
+    lines.push(`↓ ${digit}`);
+  });
+
+  lines.push("");
+  lines.push(
+    `Fractional result: .${fractionText}`
+  );
 
   let note =
-    `Fractional digits: ${formatted.fractionText}`;
+    `Fractional digits: ${fractionText}`;
 
   if (repeatStart >= 0) {
     note +=
       " Parentheses indicate repeating digits.";
   }
 
-  if (formatted.truncated) {
-    note += " The expansion was truncated.";
-  }
-
-  if (digits.length > MAX_TABLE_ROWS) {
+  if (truncated) {
     note +=
-      ` Only the first ${MAX_TABLE_ROWS} rows are displayed.`;
+      ` Only the first ${MAX_FRACTION_DIGITS} fractional digits are shown.`;
   }
 
-  return tableBlock(
+  return paperBlock(
     "Convert the Fractional Portion",
-    `Multiply the fractional remainder by ${base} and record each whole-number digit.`,
-    [
-      "Step",
-      "Fractional Value",
-      "Multiply",
-      "Digit",
-      "New Fraction"
-    ],
-    rows,
+    `Use repeated multiplication by ${base}. After each multiplication, take the whole-number digit and continue with the remaining fractional part.`,
+    lines,
     note
   );
 }
+
 
 // =====================================================
 // COMPLETE CONVERTER SOLUTION
@@ -555,8 +815,18 @@ function buildConversionSolution(
   fromBase,
   toBase
 ) {
-  const value = parseNumber(input, fromBase);
-  const formatted = formatNumber(value, toBase);
+  const value =
+    parseNumber(
+      input,
+      fromBase
+    );
+
+  const formatted =
+    formatNumber(
+      value,
+      toBase
+    );
+
   const steps = [];
 
   steps.push(
@@ -583,6 +853,11 @@ function buildConversionSolution(
       )
     );
   } else {
+    // -----------------------------------------
+    // Convert source number to decimal first
+    // using positional notation when needed.
+    // -----------------------------------------
+
     if (fromBase !== 10) {
       steps.push(
         positionalSteps(
@@ -603,14 +878,28 @@ function buildConversionSolution(
       );
     }
 
+    // -----------------------------------------
+    // Decimal → target base
+    // -----------------------------------------
+
     if (toBase !== 10) {
       steps.push(
-        integerConversionSteps(value, toBase)
+        integerConversionSteps(
+          value,
+          toBase
+        )
       );
 
-      if (absolute(value.n) % value.d !== 0n) {
+      if (
+        absolute(value.n) %
+        value.d !==
+        0n
+      ) {
         steps.push(
-          fractionalConversionSteps(value, toBase)
+          fractionalConversionSteps(
+            value,
+            toBase
+          )
         );
       }
     }
@@ -631,28 +920,48 @@ function buildConversionSolution(
   };
 }
 
+
 // =====================================================
 // CALCULATOR OPERATIONS
 // =====================================================
 
-function calculateExactResult(first, second, operator) {
+function calculateExactResult(
+  first,
+  second,
+  operator
+) {
   switch (operator) {
     case "+":
-      return add(first, second);
+      return add(
+        first,
+        second
+      );
 
     case "-":
-      return subtract(first, second);
+      return subtract(
+        first,
+        second
+      );
 
     case "*":
-      return multiply(first, second);
+      return multiply(
+        first,
+        second
+      );
 
     case "/":
-      return divide(first, second);
+      return divide(
+        first,
+        second
+      );
 
     default:
-      throw new Error("Invalid operation.");
+      throw new Error(
+        "Invalid operation."
+      );
   }
 }
+
 
 function operationSymbol(operator) {
   return {
@@ -663,6 +972,7 @@ function operationSymbol(operator) {
   }[operator] || operator;
 }
 
+
 function operationName(operator) {
   return {
     "+": "Addition",
@@ -672,158 +982,946 @@ function operationName(operator) {
   }[operator] || "Calculation";
 }
 
+
 // =====================================================
-// WRITTEN ARITHMETIC HELPERS
+// BASE ARITHMETIC HELPERS
 // =====================================================
 
-function decimalPlaces(text) {
-  const clean = text.replace(/^\+/, "");
-  const dot = clean.indexOf(".");
-
-  return dot < 0 ? 0 : clean.length - dot - 1;
-}
-
-function padDecimal(text, places) {
-  if (text.includes("(") || text.includes("…")) {
-    return text;
-  }
-
-  if (places === 0) {
-    return text;
-  }
-
-  if (!text.includes(".")) {
-    return text + "." + "0".repeat(places);
-  }
-
-  return text + "0".repeat(
-    Math.max(0, places - decimalPlaces(text))
+function digitValue(character) {
+  return DIGITS.indexOf(
+    String(character).toUpperCase()
   );
 }
 
 
-function buildWrittenArithmetic(first, second, operator, result) {
-  const firstText = decimalDescription(first);
-  const secondText = decimalDescription(second);
-  const resultText = decimalDescription(result);
-  const symbol = operationSymbol(operator);
+function digitCharacter(value) {
+  return DIGITS[value];
+}
 
-  // ADDITION AND SUBTRACTION
-  if (operator === "+" || operator === "-") {
-    const finite = !/[()…]/.test(
-      firstText + secondText + resultText
+
+function stripNumberSign(text) {
+  return String(text)
+    .replace(/^[+-]/, "");
+}
+
+
+function compareFractions(a, b) {
+  const left =
+    a.n * b.d;
+
+  const right =
+    b.n * a.d;
+
+  if (left < right) return -1;
+  if (left > right) return 1;
+
+  return 0;
+}
+
+
+function isFiniteFormattedNumber(text) {
+  return !/[()…]/.test(text);
+}
+
+
+// =====================================================
+// NORMALIZE BASE NUMBER FOR COLUMN WORK
+// =====================================================
+
+function normalizeBaseNumber(
+  value,
+  base,
+  places
+) {
+  const formatted =
+    formatNumber(
+      value,
+      base
     );
 
-    const places = finite
-      ? Math.max(
-          decimalPlaces(firstText),
-          decimalPlaces(secondText),
-          decimalPlaces(resultText)
-        )
-      : 0;
-
-    const left = finite
-      ? padDecimal(firstText, places)
-      : firstText;
-
-    const right = finite
-      ? padDecimal(secondText, places)
-      : secondText;
-
-    const answer = finite
-      ? padDecimal(resultText, places)
-      : resultText;
-
-    const width = Math.max(
-      left.length,
-      right.length + 2,
-      answer.length
+  let text =
+    stripNumberSign(
+      formatted.text
     );
 
-    return [
-      left.padStart(width),
-      (symbol + " " + right).padStart(width),
-      "─".repeat(width),
-      answer.padStart(width)
-    ];
+  if (
+    !isFiniteFormattedNumber(text)
+  ) {
+    return null;
   }
 
-  // TRADITIONAL LONG MULTIPLICATION
-  if (operator === "*") {
-    // Convert exact fractions to equivalent integer multiplication:
-    // (a/b) × (c/d) = (a × c) / (b × d).
-    const a = absolute(first.n);
-    const b = absolute(second.n);
-    const denominator = first.d * second.d;
+  let [
+    whole = "0",
+    fraction = ""
+  ] = text.split(".");
 
-    const aText = a.toString();
-    const bText = b.toString();
-    const digits = bText.split("").reverse();
-
-    const partials = digits.map((character, position) => {
-      return a * BigInt(character) * (10n ** BigInt(position));
-    });
-
-    const product = a * b;
-    const productText = product.toString();
-
-    const width = Math.max(
-      aText.length,
-      bText.length + 2,
-      productText.length,
-      ...partials.map(value => value.toString().length)
+  fraction =
+    fraction.padEnd(
+      places,
+      "0"
     );
 
-    const lines = [
-      aText.padStart(width),
-      ("× " + bText).padStart(width),
+  if (places > 0) {
+    return (
+      whole +
+      "." +
+      fraction
+    );
+  }
+
+  return whole;
+}
+
+
+// =====================================================
+// COLUMN ADDITION — WITH CARRIES
+// =====================================================
+
+function traditionalAdditionLines(
+  first,
+  second,
+  base,
+  result
+) {
+  const firstFormatted =
+    formatNumber(first, base);
+
+  const secondFormatted =
+    formatNumber(second, base);
+
+  const resultFormatted =
+    formatNumber(result, base);
+
+  if (
+    !isFiniteFormattedNumber(
+      firstFormatted.text
+    ) ||
+    !isFiniteFormattedNumber(
+      secondFormatted.text
+    ) ||
+    !isFiniteFormattedNumber(
+      resultFormatted.text
+    ) ||
+    first.n < 0n ||
+    second.n < 0n
+  ) {
+    return null;
+  }
+
+  const firstFraction =
+    (
+      stripNumberSign(
+        firstFormatted.text
+      ).split(".")[1] || ""
+    ).length;
+
+  const secondFraction =
+    (
+      stripNumberSign(
+        secondFormatted.text
+      ).split(".")[1] || ""
+    ).length;
+
+  const resultFraction =
+    (
+      stripNumberSign(
+        resultFormatted.text
+      ).split(".")[1] || ""
+    ).length;
+
+  const places =
+    Math.max(
+      firstFraction,
+      secondFraction,
+      resultFraction
+    );
+
+  const firstText =
+    normalizeBaseNumber(
+      first,
+      base,
+      places
+    );
+
+  const secondText =
+    normalizeBaseNumber(
+      second,
+      base,
+      places
+    );
+
+  const resultText =
+    normalizeBaseNumber(
+      result,
+      base,
+      places
+    );
+
+  if (
+    !firstText ||
+    !secondText ||
+    !resultText
+  ) {
+    return null;
+  }
+
+  const firstDigits =
+    firstText.replace(".", "");
+
+  const secondDigits =
+    secondText.replace(".", "");
+
+  const maxLength =
+    Math.max(
+      firstDigits.length,
+      secondDigits.length
+    );
+
+  const a =
+    firstDigits.padStart(
+      maxLength,
+      "0"
+    );
+
+  const b =
+    secondDigits.padStart(
+      maxLength,
+      "0"
+    );
+
+  const carries =
+    new Array(
+      maxLength + 1
+    ).fill(" ");
+
+  let carry = 0;
+
+  for (
+    let i = maxLength - 1;
+    i >= 0;
+    i--
+  ) {
+    const sum =
+      digitValue(a[i]) +
+      digitValue(b[i]) +
+      carry;
+
+    carry =
+      Math.floor(
+        sum / base
+      );
+
+    if (
+      carry > 0 &&
+      i > 0
+    ) {
+      carries[i] =
+        digitCharacter(carry);
+    } else if (
+      carry > 0 &&
+      i === 0
+    ) {
+      carries[0] =
+        digitCharacter(carry);
+    }
+  }
+
+  const width =
+    Math.max(
+      firstText.length,
+      secondText.length + 2,
+      resultText.length,
+      carries.join("").length
+    );
+
+  const lines = [];
+
+  const carryText =
+    carries.join("").trimEnd();
+
+  if (carryText.trim()) {
+    lines.push(
+      carryText.padStart(width)
+    );
+
+    lines.push(
+      "carry".padStart(width)
+    );
+  }
+
+  lines.push(
+    firstText.padStart(width)
+  );
+
+  lines.push(
+    ("+ " + secondText)
+      .padStart(width)
+  );
+
+  lines.push(
+    "─".repeat(width)
+  );
+
+  lines.push(
+    resultText.padStart(width)
+  );
+
+  return lines;
+}
+
+
+// =====================================================
+// COLUMN SUBTRACTION — WITH BORROWING
+// =====================================================
+
+function traditionalSubtractionLines(
+  first,
+  second,
+  base,
+  result
+) {
+  if (
+    first.n < 0n ||
+    second.n < 0n ||
+    result.n < 0n
+  ) {
+    return null;
+  }
+
+  const firstFormatted =
+    formatNumber(first, base);
+
+  const secondFormatted =
+    formatNumber(second, base);
+
+  const resultFormatted =
+    formatNumber(result, base);
+
+  if (
+    !isFiniteFormattedNumber(
+      firstFormatted.text
+    ) ||
+    !isFiniteFormattedNumber(
+      secondFormatted.text
+    ) ||
+    !isFiniteFormattedNumber(
+      resultFormatted.text
+    )
+  ) {
+    return null;
+  }
+
+  const firstFraction =
+    (
+      firstFormatted.text
+        .split(".")[1] || ""
+    ).length;
+
+  const secondFraction =
+    (
+      secondFormatted.text
+        .split(".")[1] || ""
+    ).length;
+
+  const resultFraction =
+    (
+      resultFormatted.text
+        .split(".")[1] || ""
+    ).length;
+
+  const places =
+    Math.max(
+      firstFraction,
+      secondFraction,
+      resultFraction
+    );
+
+  const firstText =
+    normalizeBaseNumber(
+      first,
+      base,
+      places
+    );
+
+  const secondText =
+    normalizeBaseNumber(
+      second,
+      base,
+      places
+    );
+
+  const resultText =
+    normalizeBaseNumber(
+      result,
+      base,
+      places
+    );
+
+  const firstDigits =
+    firstText.replace(".", "");
+
+  const secondDigits =
+    secondText.replace(".", "");
+
+  const maxLength =
+    Math.max(
+      firstDigits.length,
+      secondDigits.length
+    );
+
+  const top =
+    firstDigits
+      .padStart(maxLength, "0")
+      .split("")
+      .map(digitValue);
+
+  const bottom =
+    secondDigits
+      .padStart(maxLength, "0")
+      .split("")
+      .map(digitValue);
+
+  const borrowMarks =
+    new Array(maxLength)
+      .fill(" ");
+
+  const working =
+    top.slice();
+
+  for (
+    let i = maxLength - 1;
+    i >= 0;
+    i--
+  ) {
+    if (
+      working[i] <
+      bottom[i]
+    ) {
+      let borrowIndex =
+        i - 1;
+
+      while (
+        borrowIndex >= 0 &&
+        working[borrowIndex] === 0
+      ) {
+        borrowIndex--;
+      }
+
+      if (borrowIndex >= 0) {
+        working[borrowIndex]--;
+
+        for (
+          let j =
+            borrowIndex + 1;
+          j < i;
+          j++
+        ) {
+          working[j] +=
+            base - 1;
+
+          borrowMarks[j] =
+            digitCharacter(
+              working[j]
+            );
+        }
+
+        working[i] += base;
+
+        borrowMarks[i] =
+          working[i].toString();
+      }
+    }
+  }
+
+  const width =
+    Math.max(
+      firstText.length,
+      secondText.length + 2,
+      resultText.length
+    );
+
+  const lines = [];
+
+  if (
+    borrowMarks.some(
+      mark =>
+        String(mark).trim()
+    )
+  ) {
+    lines.push(
+      borrowMarks
+        .join("")
+        .padStart(width)
+    );
+
+    lines.push(
+      "borrow/regroup".padStart(
+        width
+      )
+    );
+  }
+
+  lines.push(
+    firstText.padStart(width)
+  );
+
+  lines.push(
+    ("− " + secondText)
+      .padStart(width)
+  );
+
+  lines.push(
+    "─".repeat(width)
+  );
+
+  lines.push(
+    resultText.padStart(width)
+  );
+
+  return lines;
+}
+
+
+// =====================================================
+// LONG MULTIPLICATION — BASES 2 TO 36
+// =====================================================
+
+function traditionalMultiplicationLines(
+  first,
+  second,
+  base,
+  result
+) {
+  const firstFormatted =
+    formatNumber(first, base);
+
+  const secondFormatted =
+    formatNumber(second, base);
+
+  const resultFormatted =
+    formatNumber(result, base);
+
+  const firstDisplay =
+    stripNumberSign(
+      firstFormatted.text
+    );
+
+  const secondDisplay =
+    stripNumberSign(
+      secondFormatted.text
+    );
+
+  const resultDisplay =
+    stripNumberSign(
+      resultFormatted.text
+    );
+
+  const negative =
+    (first.n < 0n) !==
+    (second.n < 0n);
+
+  // ===================================================
+  // Convert a displayed Base-N number into a finite
+  // working value for traditional long multiplication.
+  //
+  // Example:
+  // 52.5(4631)
+  //
+  // becomes:
+  // 52.54631
+  //
+  // The parentheses are removed ONLY for the written
+  // multiplication working. The exact arithmetic engine
+  // is not changed.
+  // ===================================================
+
+  function makeFiniteWorkingText(text) {
+    return text
+      .replace(/\(([^)]+)\)/g, "$1")
+      .replace(/…/g, "");
+  }
+
+  const firstWorking =
+    makeFiniteWorkingText(
+      firstDisplay
+    );
+
+  const secondWorking =
+    makeFiniteWorkingText(
+      secondDisplay
+    );
+
+  const repeating =
+    /[()…]/.test(
+      firstDisplay +
+      secondDisplay
+    );
+
+  // ===================================================
+  // Count radix places
+  // ===================================================
+
+  function fractionPlaces(text) {
+    const dot =
+      text.indexOf(".");
+
+    if (dot < 0) {
+      return 0;
+    }
+
+    return (
+      text.length -
+      dot -
+      1
+    );
+  }
+
+  const firstPlaces =
+    fractionPlaces(
+      firstWorking
+    );
+
+  const secondPlaces =
+    fractionPlaces(
+      secondWorking
+    );
+
+  const totalPlaces =
+    firstPlaces +
+    secondPlaces;
+
+  // ===================================================
+  // Remove radix points
+  // ===================================================
+
+  const firstDigits =
+    firstWorking.replace(
+      ".",
+      ""
+    );
+
+  const secondDigits =
+    secondWorking.replace(
+      ".",
+      ""
+    );
+
+  // ===================================================
+  // Convert digit strings to BigInt while respecting
+  // the selected base.
+  // ===================================================
+
+  function baseDigitsToBigInt(text) {
+    let value = 0n;
+
+    for (
+      const character of text
+    ) {
+      value =
+        value *
+        BigInt(base) +
+        BigInt(
+          digitValue(character)
+        );
+    }
+
+    return value;
+  }
+
+  const multiplicand =
+    baseDigitsToBigInt(
+      firstDigits
+    );
+
+  const multiplier =
+    baseDigitsToBigInt(
+      secondDigits
+    );
+
+  // ===================================================
+  // Build partial products
+  // ===================================================
+
+  const multiplierCharacters =
+    secondDigits
+      .split("")
+      .reverse();
+
+  const partials = [];
+
+  multiplierCharacters.forEach(
+    (character, position) => {
+      const digit =
+        BigInt(
+          digitValue(character)
+        );
+
+      const partial =
+        multiplicand *
+        digit *
+        (
+          BigInt(base) **
+          BigInt(position)
+        );
+
+      partials.push(
+        partial
+          .toString(base)
+          .toUpperCase()
+      );
+    }
+  );
+
+  const rawProduct =
+    multiplicand *
+    multiplier;
+
+  let rawProductText =
+    rawProduct
+      .toString(base)
+      .toUpperCase();
+
+  // ===================================================
+  // Restore radix point in written product
+  // ===================================================
+
+  function restoreRadixPoint(
+    text,
+    places
+  ) {
+    if (places === 0) {
+      return text;
+    }
+
+    let working = text;
+
+    while (
+      working.length <= places
+    ) {
+      working =
+        "0" + working;
+    }
+
+    const position =
+      working.length -
+      places;
+
+    return (
+      working.slice(
+        0,
+        position
+      ) +
+      "." +
+      working.slice(
+        position
+      )
+    );
+  }
+
+  const writtenProduct =
+    restoreRadixPoint(
+      rawProductText,
+      totalPlaces
+    );
+
+  // ===================================================
+  // Determine width
+  // ===================================================
+
+  const width =
+    Math.max(
+      firstWorking.length,
+      secondWorking.length + 2,
+      rawProductText.length,
+      writtenProduct.length,
+      ...partials.map(
+        text => text.length
+      )
+    );
+
+  const lines = [];
+
+  // ===================================================
+  // Show original values
+  // ===================================================
+
+  lines.push(
+    firstDisplay.padStart(
+      width
+    )
+  );
+
+  lines.push(
+    (
+      "× " +
+      secondDisplay
+    ).padStart(
+      width
+    )
+  );
+
+  lines.push(
+    "─".repeat(width)
+  );
+
+  // ===================================================
+  // If repeating, explain the written precision
+  // ===================================================
+
+  if (repeating) {
+    lines.push("");
+
+    lines.push(
+      "For the written long multiplication,"
+    );
+
+    lines.push(
+      "use the displayed repeating digits:"
+    );
+
+    lines.push("");
+
+    lines.push(
+      firstWorking.padStart(
+        width
+      )
+    );
+
+    lines.push(
+      (
+        "× " +
+        secondWorking
+      ).padStart(
+        width
+      )
+    );
+
+    lines.push(
       "─".repeat(width)
-    ];
-
-    partials.forEach(value => {
-      lines.push(value.toString().padStart(width));
-    });
-
-    if (partials.length > 1) {
-      lines.push("─".repeat(width));
-    }
-
-    lines.push(productText.padStart(width));
-
-    if (denominator !== 1n) {
-      lines.push("");
-      lines.push(
-        `Divide the product by ${denominator.toString()}`
-      );
-      lines.push(
-        `${productText} ÷ ${denominator.toString()}`
-      );
-      lines.push(`= ${resultText}`);
-    }
-
-    if ((first.n < 0n) !== (second.n < 0n) && product !== 0n) {
-      lines.push("Apply the negative sign.");
-      lines.push(`Final answer: ${resultText}`);
-    }
-
-    return lines;
+    );
   }
 
-  return [
-    `${firstText} ${symbol} ${secondText}`,
-    "─".repeat(20),
-    resultText
-  ];
+  // ===================================================
+  // Traditional partial products
+  // ===================================================
+
+  partials.forEach(
+    partial => {
+      lines.push(
+        partial.padStart(
+          width
+        )
+      );
+    }
+  );
+
+  if (
+    partials.length > 1
+  ) {
+    lines.push(
+      "─".repeat(width)
+    );
+  }
+
+  // Product before radix point
+  lines.push(
+    rawProductText.padStart(
+      width
+    )
+  );
+
+  // ===================================================
+  // Restore radix point
+  // ===================================================
+
+  if (
+    totalPlaces > 0
+  ) {
+    lines.push("");
+
+    lines.push(
+      "Restore the radix point:"
+    );
+
+    lines.push(
+      `${firstPlaces} + ${secondPlaces} = ${totalPlaces} fractional places`
+    );
+
+    lines.push("");
+
+    lines.push(
+      writtenProduct.padStart(
+        width
+      )
+    );
+  }
+
+  // ===================================================
+  // Repeating-number note
+  // ===================================================
+
+  if (repeating) {
+    lines.push("");
+
+    lines.push(
+      "The original number contains repeating digits,"
+    );
+
+    lines.push(
+      "so the written multiplication above uses"
+    );
+
+    lines.push(
+      "the displayed digits as the working precision."
+    );
+
+    lines.push("");
+
+    lines.push(
+      `Exact result: ${resultDisplay}`
+    );
+  } else {
+    lines.push("");
+
+    lines.push(
+      `Result: ${resultDisplay}`
+    );
+  }
+
+  // ===================================================
+  // Sign
+  // ===================================================
+
+  if (
+    negative &&
+    result.n !== 0n
+  ) {
+    lines.push("");
+
+    lines.push(
+      "Apply the negative sign."
+    );
+
+    lines.push(
+      `Final answer: −${resultDisplay}`
+    );
+  }
+
+  return lines;
 }
 // =====================================================
-// IMPROVED LONG DIVISION — BASES 2 TO 36
-// Exact BigInt working.
-// Displays up to 5 fractional digits.
+// LONG DIVISION — BASES 2 TO 36
 // =====================================================
 
-function longDivisionSteps(first, second, base) {
+function longDivisionSteps(
+  first,
+  second,
+  base
+) {
   if (second.n === 0n) {
-    throw new Error("Division by zero is not allowed.");
+    throw new Error(
+      "Division by zero is not allowed."
+    );
   }
 
   if (
@@ -831,75 +1929,135 @@ function longDivisionSteps(first, second, base) {
     base < 2 ||
     base > 36
   ) {
-    throw new Error("Base must be between 2 and 36.");
+    throw new Error(
+      "Base must be between 2 and 36."
+    );
   }
 
-  const radix = BigInt(base);
-  const limit = MAX_DIVISION_WORK_DIGITS;
+  const radix =
+    BigInt(base);
 
-  // (a/b) ÷ (c/d) = (a*d) ÷ (b*c)
-  // Use positive integer magnitudes for working.
+  const limit =
+    MAX_DIVISION_WORK_DIGITS;
 
-  const dividend = absolute(
-    first.n * second.d
-  );
+  // Convert fractional operands to
+  // equivalent integer division:
+  //
+  // (a/b) ÷ (c/d)
+  // =
+  // (a × d) ÷ (b × c)
 
-  const divisor = absolute(
-    first.d * second.n
-  );
+  const dividend =
+    absolute(
+      first.n *
+      second.d
+    );
+
+  const divisor =
+    absolute(
+      first.d *
+      second.n
+    );
 
   const dividendText =
-    dividend.toString(base).toUpperCase();
+    dividend
+      .toString(base)
+      .toUpperCase();
 
   const divisorText =
-    divisor.toString(base).toUpperCase();
+    divisor
+      .toString(base)
+      .toUpperCase();
 
   const negative =
-    (first.n < 0n) !== (second.n < 0n) &&
+    (
+      first.n < 0n
+    ) !== (
+      second.n < 0n
+    ) &&
     dividend !== 0n;
 
-  const inputDigits = dividendText.split("");
-  const wholeDigits = [];
+  const inputDigits =
+    dividendText.split("");
+
+  const quotientPositions =
+    new Array(
+      inputDigits.length
+    ).fill(" ");
+
   const operations = [];
 
   let remainder = 0n;
-  let started = false;
+  let quotientStarted = false;
 
   // -----------------------------------------
   // Whole-number division
   // -----------------------------------------
 
-  for (let i = 0; i < inputDigits.length; i++) {
-    const digit = BigInt(
-      DIGITS.indexOf(inputDigits[i])
-    );
+  for (
+    let i = 0;
+    i < inputDigits.length;
+    i++
+  ) {
+    const digit =
+      BigInt(
+        digitValue(
+          inputDigits[i]
+        )
+      );
 
-    const partial = remainder * radix + digit;
-    const quotientDigit = partial / divisor;
-    const product = quotientDigit * divisor;
-    const nextRemainder = partial - product;
+    const partial =
+      remainder *
+      radix +
+      digit;
+
+    const quotientDigit =
+      partial / divisor;
+
+    const product =
+      quotientDigit *
+      divisor;
+
+    const nextRemainder =
+      partial -
+      product;
 
     if (
       quotientDigit !== 0n ||
-      started ||
-      i === inputDigits.length - 1
+      quotientStarted ||
+      i ===
+        inputDigits.length - 1
     ) {
-      started = true;
+      quotientStarted = true;
 
-      wholeDigits.push(
-        DIGITS[Number(quotientDigit)]
-      );
+      quotientPositions[i] =
+        DIGITS[
+          Number(
+            quotientDigit
+          )
+        ];
 
       operations.push({
         partial,
         product,
-        remainder: nextRemainder,
+        remainder:
+          nextRemainder,
         endColumn: i,
-        digit: DIGITS[Number(quotientDigit)]
+        fractional: false
       });
     }
 
-    remainder = nextRemainder;
+    remainder =
+      nextRemainder;
+  }
+
+  let wholeQuotient =
+    quotientPositions
+      .join("")
+      .trim();
+
+  if (!wholeQuotient) {
+    wholeQuotient = "0";
   }
 
   // -----------------------------------------
@@ -912,54 +2070,86 @@ function longDivisionSteps(first, second, base) {
   let repeatStart = -1;
   let truncated = false;
 
-  while (remainder !== 0n) {
-    const key = remainder.toString();
+  while (
+    remainder !== 0n
+  ) {
+    const key =
+      remainder.toString();
 
     if (seen.has(key)) {
-      repeatStart = seen.get(key);
+      repeatStart =
+        seen.get(key);
       break;
     }
 
-    if (fractionDigits.length >= limit) {
+    if (
+      fractionDigits.length >=
+      limit
+    ) {
       truncated = true;
       break;
     }
 
-    seen.set(key, fractionDigits.length);
+    seen.set(
+      key,
+      fractionDigits.length
+    );
 
-    const partial = remainder * radix;
-    const quotientDigit = partial / divisor;
-    const product = quotientDigit * divisor;
-    const nextRemainder = partial - product;
+    const partial =
+      remainder *
+      radix;
+
+    const quotientDigit =
+      partial /
+      divisor;
+
+    const product =
+      quotientDigit *
+      divisor;
+
+    const nextRemainder =
+      partial -
+      product;
 
     const digitText =
-      DIGITS[Number(quotientDigit)];
+      DIGITS[
+        Number(
+          quotientDigit
+        )
+      ];
 
-    fractionDigits.push(digitText);
+    fractionDigits.push(
+      digitText
+    );
 
     operations.push({
       partial,
       product,
-      remainder: nextRemainder,
+      remainder:
+        nextRemainder,
       endColumn:
-        inputDigits.length + fractionDigits.length,
-      digit: digitText
+        inputDigits.length +
+        fractionDigits.length,
+      fractional: true
     });
 
-    remainder = nextRemainder;
+    remainder =
+      nextRemainder;
   }
 
-  // -----------------------------------------
-  // Prepare quotient
-  // -----------------------------------------
-
-  let fractionText = fractionDigits.join("");
+  let fractionText =
+    fractionDigits.join("");
 
   if (repeatStart >= 0) {
     fractionText =
-      fractionText.slice(0, repeatStart) +
+      fractionText.slice(
+        0,
+        repeatStart
+      ) +
       "(" +
-      fractionText.slice(repeatStart) +
+      fractionText.slice(
+        repeatStart
+      ) +
       ")";
   } else if (truncated) {
     fractionText += "…";
@@ -967,101 +2157,142 @@ function longDivisionSteps(first, second, base) {
 
   const quotient =
     (negative ? "−" : "") +
-    wholeDigits.join("") +
-    (fractionText ? "." + fractionText : "");
-
-  // -----------------------------------------
-  // Build long-division bracket
-  // -----------------------------------------
+    wholeQuotient +
+    (
+      fractionText
+        ? "." + fractionText
+        : ""
+    );
 
   const workDigits =
     dividendText +
     (
       fractionDigits.length
-        ? "." + "0".repeat(fractionDigits.length)
+        ? "." +
+          "0".repeat(
+            fractionDigits.length
+          )
         : ""
     );
 
   const prefix =
-    " ".repeat(divisorText.length + 3);
+    " ".repeat(
+      divisorText.length + 3
+    );
 
-  const workWidth = Math.max(
-    workDigits.length,
-    quotient.replace(/[()…]/g, "").length
-  );
+  const cleanQuotient =
+    quotient.replace(
+      /[()…−]/g,
+      ""
+    );
+
+  const workWidth =
+    Math.max(
+      workDigits.length,
+      cleanQuotient.length
+    );
 
   const lines = [
-    prefix + quotient.padStart(workWidth),
-    prefix + "─".repeat(workWidth),
-    divisorText + " │ " + workDigits
+    prefix +
+      quotient.padStart(
+        workWidth
+      ),
+
+    prefix +
+      "─".repeat(
+        workWidth
+      ),
+
+    divisorText +
+      " │ " +
+      workDigits
   ];
 
-  // -----------------------------------------
-  // Show division working
-  // -----------------------------------------
+  operations.forEach(
+    (item, index) => {
+      const partialText =
+        item.partial
+          .toString(base)
+          .toUpperCase();
 
-  operations.forEach((item, index) => {
-    const partialText =
-      item.partial.toString(base).toUpperCase();
+      const productText =
+        item.product
+          .toString(base)
+          .toUpperCase();
 
-    const productText =
-      item.product.toString(base).toUpperCase();
+      const remainderText =
+        item.remainder
+          .toString(base)
+          .toUpperCase();
 
-    const remainderText =
-      item.remainder.toString(base).toUpperCase();
+      const columnWidth =
+        Math.max(
+          partialText.length,
+          productText.length,
+          remainderText.length
+        );
 
-    const columnWidth = Math.max(
-      partialText.length,
-      productText.length,
-      remainderText.length
-    );
+      const start =
+        Math.max(
+          0,
+          item.endColumn -
+            columnWidth +
+            1
+        );
 
-    const start = Math.max(
-      0,
-      item.endColumn - columnWidth + 1
-    );
+      const indentation =
+        prefix +
+        " ".repeat(start);
 
-    const indentation =
-      prefix + " ".repeat(start);
+      lines.push(
+        indentation +
+        partialText.padStart(
+          columnWidth
+        )
+      );
 
-    lines.push(
-      indentation +
-      partialText.padStart(columnWidth)
-    );
+      lines.push(
+        indentation +
+        (
+          "−" +
+          productText
+        ).padStart(
+          columnWidth + 1
+        )
+      );
 
-    lines.push(
-      indentation +
-      ("−" + productText).padStart(columnWidth + 1)
-    );
+      lines.push(
+        indentation +
+        "─".repeat(
+          columnWidth + 1
+        )
+      );
 
-    lines.push(
-      indentation +
-      "─".repeat(columnWidth + 1)
-    );
+      lines.push(
+        indentation +
+        remainderText.padStart(
+          columnWidth
+        )
+      );
 
-    lines.push(
-      indentation +
-      remainderText.padStart(columnWidth)
-    );
-
-    if (index < operations.length - 1) {
-      lines.push("");
+      if (
+        index <
+        operations.length - 1
+      ) {
+        lines.push("");
+      }
     }
-  });
-
-  // -----------------------------------------
-  // Explanation and note
-  // -----------------------------------------
+  );
 
   let description =
-    `Divide in Base ${base}. For each quotient digit, ` +
-    "multiply the divisor, subtract the product, " +
-    "and bring down the next digit.";
+    `Use traditional long division in Base ${base}. Divide, multiply, subtract, and bring down the next digit.`;
 
-  if (first.d !== 1n || second.d !== 1n) {
+  if (
+    first.d !== 1n ||
+    second.d !== 1n
+  ) {
     description +=
-      " Fractional operands are first rewritten " +
-      "as an equivalent integer division.";
+      " Fractional operands are first rewritten as an equivalent integer division.";
   }
 
   let note =
@@ -1074,14 +2305,7 @@ function longDivisionSteps(first, second, base) {
 
   if (truncated) {
     note +=
-      ` Only the first ${limit} fractional digits ` +
-      "are shown in the division working. " +
-      "The division continues beyond this point.";
-  }
-
-  if (negative) {
-    note +=
-      " The negative sign is applied to the quotient.";
+      ` Only the first ${limit} fractional quotient digits are shown in the written work.`;
   }
 
   return paperBlock(
@@ -1092,70 +2316,218 @@ function longDivisionSteps(first, second, base) {
   );
 }
 
+
 // =====================================================
-// WRITTEN ARITHMETIC SOLUTION
+// TRADITIONAL ARITHMETIC SOLUTION
 // =====================================================
 
 function arithmeticSteps(
   first,
   second,
   operator,
-  result
+  result,
+  base
 ) {
-  const firstText = decimalDescription(first);
-  const secondText = decimalDescription(second);
-  const resultText = decimalDescription(result);
+  const firstText =
+    formatNumber(
+      first,
+      base
+    ).text;
 
-  const lines = buildWrittenArithmetic(
-    first,
-    second,
-    operator,
-    result
-  );
+  const secondText =
+    formatNumber(
+      second,
+      base
+    ).text;
 
+  const resultText =
+    formatNumber(
+      result,
+      base
+    ).text;
+
+  let lines = null;
   let description = "";
 
+  // -----------------------------------------
+  // Addition
+  // -----------------------------------------
+
   if (operator === "+") {
+    lines =
+      traditionalAdditionLines(
+        first,
+        second,
+        base,
+        result
+      );
+
     description =
-      "Align the decimal points, add each column, " +
-      "and write the answer below the line.";
-  } else if (operator === "-") {
-    description =
-      "Align the decimal points, subtract each column, " +
-      "and write the answer below the line.";
-  } else if (operator === "*") {
-    description =
-      "Multiply the decimal values and write the " +
-      "product below the line.";
-  } else {
-    description =
-      "Perform the arithmetic operation.";
+      `Add directly in Base ${base}. Start at the rightmost column and carry whenever a column reaches ${base}.`;
   }
 
-  let note =
-    `${firstText} ${operationSymbol(operator)} ` +
-    `${secondText} = ${resultText}`;
+  // -----------------------------------------
+  // Subtraction
+  // -----------------------------------------
 
-  if (resultText.includes("(")) {
-    note +=
-      ". Digits inside parentheses repeat indefinitely.";
+  else if (operator === "-") {
+    lines =
+      traditionalSubtractionLines(
+        first,
+        second,
+        base,
+        result
+      );
+
+    description =
+      `Subtract directly in Base ${base}. Start at the rightmost column and borrow one group of ${base} whenever needed.`;
   }
 
-  if (resultText.includes("…")) {
-    note +=
-      ". The displayed decimal expansion is truncated.";
+  // -----------------------------------------
+  // Multiplication
+  // -----------------------------------------
+
+  else if (operator === "*") {
+    lines =
+      traditionalMultiplicationLines(
+        first,
+        second,
+        base,
+        result
+      );
+
+    description =
+      `Use traditional long multiplication in Base ${base}. Multiply by each digit, shift each partial product by its place value, then add the partial products.`;
+  }
+
+  // -----------------------------------------
+  // Fallback for cases that cannot be
+  // displayed finitely in column form.
+  // -----------------------------------------
+
+  if (!lines) {
+    const width =
+      Math.max(
+        firstText.length,
+        secondText.length + 2,
+        resultText.length
+      );
+
+    lines = [
+      firstText.padStart(width),
+      (
+        operationSymbol(operator) +
+        " " +
+        secondText
+      ).padStart(width),
+      "─".repeat(width),
+      resultText.padStart(width)
+    ];
+
+    description =
+      `Perform ${operationName(operator).toLowerCase()} in Base ${base}.`;
   }
 
   return paperBlock(
-    `Perform ${operationName(operator)}`,
+    `Traditional ${operationName(operator)} — Base ${base}`,
     description,
     lines,
-    note
+    `${firstText} ${operationSymbol(operator)} ${secondText} = ${resultText}`
   );
 }
 
+
+// =====================================================
+// CONVERT AN OPERAND TO THE WORKING BASE
+// =====================================================
+
+function operandConversionSteps(
+  value,
+  originalInput,
+  originalBase,
+  workingBase,
+  label
+) {
+  const steps = [];
+
+  if (
+    originalBase ===
+    workingBase
+  ) {
+    return steps;
+  }
+
+  steps.push(
+    textBlock(
+      `Prepare the ${label}`,
+      `Convert the ${label.toLowerCase()} to the working base before performing the arithmetic.`,
+      [
+        `Original: ${originalInput.toUpperCase()} (Base ${originalBase})`,
+        `Working base: ${workingBase}`
+      ]
+    )
+  );
+
+  if (
+    originalBase !== 10
+  ) {
+    steps.push(
+      positionalSteps(
+        originalInput,
+        originalBase,
+        `Convert the ${label} to Decimal`
+      )
+    );
+  }
+
+  if (
+    workingBase !== 10
+  ) {
+    steps.push(
+      integerConversionSteps(
+        value,
+        workingBase
+      )
+    );
+
+    if (
+      absolute(value.n) %
+      value.d !==
+      0n
+    ) {
+      steps.push(
+        fractionalConversionSteps(
+          value,
+          workingBase
+        )
+      );
+    }
+  }
+
+  const converted =
+    formatNumber(
+      value,
+      workingBase
+    ).text;
+
+  steps.push(
+    textBlock(
+      `${label} Ready`,
+      `The ${label.toLowerCase()} is now expressed in Base ${workingBase}.`,
+      [
+        `${label}: ${converted}`,
+        `Working base: ${workingBase}`
+      ]
+    )
+  );
+
+  return steps;
+}
+
+
 // =====================================================
 // COMPLETE CALCULATOR SOLUTION
+// Traditional arithmetic is performed in RESULT BASE.
 // =====================================================
 
 function buildCalculatorSolution(
@@ -1166,81 +2538,115 @@ function buildCalculatorSolution(
   operator,
   resultBase
 ) {
-  const first = parseNumber(
-    firstInput,
-    firstBase
-  );
+  const first =
+    parseNumber(
+      firstInput,
+      firstBase
+    );
 
-  const second = parseNumber(
-    secondInput,
-    secondBase
-  );
+  const second =
+    parseNumber(
+      secondInput,
+      secondBase
+    );
 
-  const result = calculateExactResult(
-    first,
-    second,
-    operator
-  );
+  const result =
+    calculateExactResult(
+      first,
+      second,
+      operator
+    );
 
-  const formatted = formatNumber(
-    result,
-    resultBase
-  );
+  const formatted =
+    formatNumber(
+      result,
+      resultBase
+    );
 
   const steps = [];
 
   steps.push(
     textBlock(
       "Identify the Given Values",
-      "Identify the numbers, their bases, and the operation.",
+      "Identify the two numbers, their original bases, the operation, and the requested result base.",
       [
         `First number: ${firstInput.toUpperCase()} (Base ${firstBase})`,
         `Second number: ${secondInput.toUpperCase()} (Base ${secondBase})`,
         `Operation: ${operationName(operator)}`,
-        `Result base: ${resultBase}`
+        `Working / result base: ${resultBase}`
       ]
     )
   );
 
-  // Convert the first input to decimal if needed.
-  if (firstBase !== 10) {
-    steps.push(
-      positionalSteps(
-        firstInput,
-        firstBase,
-        "Convert the First Number to Decimal"
-      )
-    );
-  }
-
-  // Convert the second input to decimal if needed.
-  if (secondBase !== 10) {
-    steps.push(
-      positionalSteps(
-        secondInput,
-        secondBase,
-        "Convert the Second Number to Decimal"
-      )
-    );
-  }
-
   // -----------------------------------------
-  // Arithmetic
+  // Convert operands to the common
+  // working base when necessary.
   // -----------------------------------------
 
-  if (operator === "/") {
+  const firstConversion =
+    operandConversionSteps(
+      first,
+      firstInput,
+      firstBase,
+      resultBase,
+      "First Number"
+    );
+
+  firstConversion.forEach(
+    step => steps.push(step)
+  );
+
+  const secondConversion =
+    operandConversionSteps(
+      second,
+      secondInput,
+      secondBase,
+      resultBase,
+      "Second Number"
+    );
+
+  secondConversion.forEach(
+    step => steps.push(step)
+  );
+
+  const firstWorking =
+    formatNumber(
+      first,
+      resultBase
+    ).text;
+
+  const secondWorking =
+    formatNumber(
+      second,
+      resultBase
+    ).text;
+
+  // -----------------------------------------
+  // Show common working base
+  // -----------------------------------------
+
+  if (
+    firstBase !== resultBase ||
+    secondBase !== resultBase
+  ) {
     steps.push(
       textBlock(
-        "Identify the Division",
-        "Read the dividend and divisor in decimal form.",
+        "Numbers in the Same Working Base",
+        `Both operands are now expressed in Base ${resultBase}, so the arithmetic can be performed directly using the traditional method.`,
         [
-          `Dividend: ${decimalDescription(first)}`,
-          `Divisor: ${decimalDescription(second)}`,
-          `Decimal answer: ${decimalDescription(result)}`
+          `First number: ${firstWorking}`,
+          `Second number: ${secondWorking}`,
+          `Operation: ${operationName(operator)}`
         ]
       )
     );
+  }
 
+  // -----------------------------------------
+  // Traditional arithmetic
+  // -----------------------------------------
+
+  if (operator === "/") {
     steps.push(
       longDivisionSteps(
         first,
@@ -1254,43 +2660,15 @@ function buildCalculatorSolution(
         first,
         second,
         operator,
-        result
-      )
-    );
-  }
-
-  // -----------------------------------------
-  // Convert result to requested base
-  // -----------------------------------------
-
-  if (resultBase !== 10) {
-    steps.push(
-      textBlock(
-        "Prepare the Result for Base Conversion",
-        "The arithmetic result is ready to convert.",
-        [
-          `Decimal answer: ${decimalDescription(result)}`,
-          `Target base: ${resultBase}`
-        ]
-      )
-    );
-
-    steps.push(
-      integerConversionSteps(
         result,
         resultBase
       )
     );
-
-    if (absolute(result.n) % result.d !== 0n) {
-      steps.push(
-        fractionalConversionSteps(
-          result,
-          resultBase
-        )
-      );
-    }
   }
+
+  // -----------------------------------------
+  // Final result
+  // -----------------------------------------
 
   steps.push(
     finalBlock(
@@ -1308,7 +2686,6 @@ function buildCalculatorSolution(
     steps
   };
 }
-
 // =====================================================
 // RESULT NOTES
 // =====================================================
