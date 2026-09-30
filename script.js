@@ -1,4 +1,3 @@
-
 "use strict";
 
 // =====================================================
@@ -7,8 +6,13 @@
 // =====================================================
 
 const DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 const MAX_FRACTION_DIGITS = 500;
+const MAX_RESULT_DISPLAY_DIGITS = 20;
+
 const MAX_TABLE_ROWS = 100;
+const MAX_DIVISION_WORK_DIGITS = 5;
+
 const $ = id => document.getElementById(id);
 
 const BASE_NAMES = {
@@ -24,7 +28,7 @@ let solutionIndex = 0;
 let solutionTimer = null;
 
 // =====================================================
-// EXACT ARITHMETIC
+// EXACT FRACTION ARITHMETIC
 // =====================================================
 
 function absolute(n) {
@@ -93,13 +97,17 @@ function divide(a, b) {
 }
 
 // =====================================================
-// PARSE NUMBER FROM BASE 2–36
+// NUMBER PARSING — BASES 2 TO 36
 // =====================================================
 
 function parseNumber(input, base) {
   const text = String(input).trim().toUpperCase();
 
-  if (!Number.isInteger(base) || base < 2 || base > 36) {
+  if (
+    !Number.isInteger(base) ||
+    base < 2 ||
+    base > 36
+  ) {
     throw new Error("Base must be between 2 and 36.");
   }
 
@@ -110,6 +118,7 @@ function parseNumber(input, base) {
   }
 
   const negative = text.startsWith("-");
+
   const unsigned = /^[+-]/.test(text)
     ? text.slice(1)
     : text;
@@ -160,12 +169,19 @@ function parseNumber(input, base) {
 }
 
 // =====================================================
-// FORMAT EXACT NUMBER
+// FORMAT EXACT NUMBERS
 // Parentheses indicate repeating digits.
-// Example: 0.(3)
 // =====================================================
 
 function formatNumber(value, base) {
+  if (
+    !Number.isInteger(base) ||
+    base < 2 ||
+    base > 36
+  ) {
+    throw new Error("Base must be between 2 and 36.");
+  }
+
   const negative = value.n < 0n;
   const numerator = absolute(value.n);
   const denominator = value.d;
@@ -274,15 +290,6 @@ function tableBlock(
   };
 }
 
-function finalBlock(title, description, answer) {
-  return {
-    type: "final",
-    title,
-    description,
-    answer
-  };
-}
-
 function paperBlock(
   title,
   description,
@@ -298,14 +305,23 @@ function paperBlock(
   };
 }
 
+function finalBlock(title, description, answer) {
+  return {
+    type: "final",
+    title,
+    description,
+    answer
+  };
+}
+
 // =====================================================
 // POSITIONAL CONVERSION
-// Used only when source base is NOT decimal.
 // =====================================================
 
 function positionalSteps(input, base, title) {
-  const text = input.trim().toUpperCase();
+  const text = String(input).trim().toUpperCase();
   const negative = text.startsWith("-");
+
   const unsigned = /^[+-]/.test(text)
     ? text.slice(1)
     : text;
@@ -321,28 +337,47 @@ function positionalSteps(input, base, title) {
     const power = integerText.length - i - 1;
     const place = BigInt(base) ** BigInt(power);
 
-    rows.push([
-      character,
-      `${base}^${power}`,
-      `${digit} × ${place}`,
-      (BigInt(digit) * place).toString()
-    ]);
+    if (rows.length < MAX_TABLE_ROWS) {
+      rows.push([
+        character,
+        `${base}^${power}`,
+        `${digit} × ${place}`,
+        (BigInt(digit) * place).toString()
+      ]);
+    }
   }
 
   for (let i = 0; i < fractionText.length; i++) {
     const character = fractionText[i];
     const digit = BigInt(DIGITS.indexOf(character));
+
     const denominator =
       BigInt(base) ** BigInt(i + 1);
 
-    rows.push([
-      character,
-      `${base}^(-${i + 1})`,
-      `${digit} × ${base}^(-${i + 1})`,
-      decimalDescription(
-        makeFraction(digit, denominator)
-      )
-    ]);
+    if (rows.length < MAX_TABLE_ROWS) {
+      rows.push([
+        character,
+        `${base}^(-${i + 1})`,
+        `${digit} × ${base}^(-${i + 1})`,
+        decimalDescription(
+          makeFraction(digit, denominator)
+        )
+      ]);
+    }
+  }
+
+  let note =
+    `${negative ? "Apply the negative sign. " : ""}` +
+    `Decimal result: ${decimalDescription(
+      parseNumber(input, base)
+    )}`;
+
+  if (
+    integerText.length + fractionText.length >
+    MAX_TABLE_ROWS
+  ) {
+    note +=
+      ` Only the first ${MAX_TABLE_ROWS} rows are displayed.`;
   }
 
   return tableBlock(
@@ -355,15 +390,12 @@ function positionalSteps(input, base, title) {
       "Decimal Value"
     ],
     rows,
-    `${negative ? "Apply the negative sign. " : ""}` +
-    `Decimal result: ${
-      decimalDescription(parseNumber(input, base))
-    }`
+    note
   );
 }
 
 // =====================================================
-// CONVERT INTEGER PORTION
+// CONVERT WHOLE-NUMBER PORTION
 // =====================================================
 
 function integerConversionSteps(value, base) {
@@ -384,7 +416,6 @@ function integerConversionSteps(value, base) {
   while (whole > 0n) {
     const quotient = whole / radix;
     const remainder = whole % radix;
-
     const digit = DIGITS[Number(remainder)];
 
     if (rows.length < MAX_TABLE_ROWS) {
@@ -400,6 +431,14 @@ function integerConversionSteps(value, base) {
     whole = quotient;
   }
 
+  let note =
+    `Whole-number result: ${digits.reverse().join("")}`;
+
+  if (digits.length > MAX_TABLE_ROWS) {
+    note +=
+      ` Only the first ${MAX_TABLE_ROWS} division rows are displayed.`;
+  }
+
   return tableBlock(
     "Convert the Whole-Number Portion",
     `Divide repeatedly by ${base}. Read the remainders from bottom to top.`,
@@ -410,13 +449,12 @@ function integerConversionSteps(value, base) {
       "Remainder"
     ],
     rows,
-    `Whole-number result: ${digits.reverse().join("")}`
+    note
   );
 }
 
 // =====================================================
 // CONVERT FRACTIONAL PORTION
-// Decimal values shown instead of fraction notation.
 // =====================================================
 
 function fractionalConversionSteps(value, base) {
@@ -485,11 +523,17 @@ function fractionalConversionSteps(value, base) {
     `Fractional digits: ${formatted.fractionText}`;
 
   if (repeatStart >= 0) {
-    note += " Parentheses indicate repeating digits.";
+    note +=
+      " Parentheses indicate repeating digits.";
   }
 
   if (formatted.truncated) {
     note += " The expansion was truncated.";
+  }
+
+  if (digits.length > MAX_TABLE_ROWS) {
+    note +=
+      ` Only the first ${MAX_TABLE_ROWS} rows are displayed.`;
   }
 
   return tableBlock(
@@ -508,7 +552,7 @@ function fractionalConversionSteps(value, base) {
 }
 
 // =====================================================
-// CONVERTER SOLUTION
+// COMPLETE CONVERTER SOLUTION
 // =====================================================
 
 function buildConversionSolution(
@@ -565,7 +609,9 @@ function buildConversionSolution(
     }
 
     if (toBase !== 10) {
-      steps.push(integerConversionSteps(value, toBase));
+      steps.push(
+        integerConversionSteps(value, toBase)
+      );
 
       if (absolute(value.n) % value.d !== 0n) {
         steps.push(
@@ -632,24 +678,20 @@ function operationName(operator) {
 }
 
 // =====================================================
-// DECIMAL ALIGNMENT HELPERS
+// WRITTEN ARITHMETIC HELPERS
 // =====================================================
 
 function decimalPlaces(text) {
   const clean = text.replace(/^\+/, "");
   const dot = clean.indexOf(".");
 
-  if (dot < 0) return 0;
-
-  return clean.length - dot - 1;
+  return dot < 0 ? 0 : clean.length - dot - 1;
 }
 
 function padDecimal(text, places) {
   if (text.includes("(") || text.includes("…")) {
     return text;
   }
-
-  const current = decimalPlaces(text);
 
   if (places === 0) {
     return text;
@@ -660,13 +702,321 @@ function padDecimal(text, places) {
   }
 
   return text + "0".repeat(
-    Math.max(0, places - current)
+    Math.max(0, places - decimalPlaces(text))
   );
 }
 
 // =====================================================
+// EXACT TERMINATING-DECIMAL HELPERS
+// =====================================================
+
+function isTerminatingInBase(value, base = 10) {
+  let denominator = value.d;
+  const radix = BigInt(base);
+
+  while (denominator !== 1n) {
+    const factor = gcd(denominator, radix);
+
+    if (factor === 1n) {
+      break;
+    }
+
+    denominator /= factor;
+  }
+
+  return denominator === 1n;
+}
+
+function exactTerminatingText(value, base = 10) {
+  if (!isTerminatingInBase(value, base)) {
+    return null;
+  }
+
+  const negative = value.n < 0n;
+  const numerator = absolute(value.n);
+  const denominator = value.d;
+  const radix = BigInt(base);
+
+  const whole = numerator / denominator;
+  let remainder = numerator % denominator;
+
+  let text = whole.toString(base).toUpperCase();
+
+  if (remainder !== 0n) {
+    text += ".";
+
+    while (remainder !== 0n) {
+      const product = remainder * radix;
+      const digit = product / denominator;
+
+      remainder = product % denominator;
+
+      text += DIGITS[Number(digit)];
+    }
+  }
+
+  return (negative ? "-" : "") + text;
+}
+
+function countFractionDigits(text) {
+  const clean = text.replace(/^[+-]/, "");
+  const dot = clean.indexOf(".");
+
+  return dot < 0 ? 0 : clean.length - dot - 1;
+}
+
+function removeDecimalPoint(text) {
+  return text
+    .replace(/^[+-]/, "")
+    .replace(".", "");
+}
+
+function insertDecimalPoint(integerText, places) {
+  if (places === 0) {
+    return integerText;
+  }
+
+  const negative = integerText.startsWith("-");
+
+  let digits = negative
+    ? integerText.slice(1)
+    : integerText;
+
+  digits = digits.padStart(places + 1, "0");
+
+  const point = digits.length - places;
+
+  const result =
+    digits.slice(0, point) +
+    "." +
+    digits.slice(point);
+
+  return (negative ? "-" : "") + result;
+}
+
+// =====================================================
+// TRADITIONAL LONG MULTIPLICATION
+// =====================================================
+
+function traditionalMultiplicationLines(
+  first,
+  second,
+  result
+) {
+  const firstText =
+    exactTerminatingText(first, 10);
+
+  const secondText =
+    exactTerminatingText(second, 10);
+
+  const resultText =
+    exactTerminatingText(result, 10);
+
+  /*
+    If either number is repeating in decimal,
+    do not pretend that a shortened decimal is exact.
+    BaseLab keeps the rational values exact instead.
+  */
+
+  if (
+    firstText === null ||
+    secondText === null ||
+    resultText === null
+  ) {
+    const firstDisplay =
+      decimalDescription(first);
+
+    const secondDisplay =
+      decimalDescription(second);
+
+    const resultDisplay =
+      decimalDescription(result);
+
+    return [
+      `${firstDisplay} × ${secondDisplay}`,
+      "",
+      "One or both values have a repeating decimal expansion.",
+      "BaseLab keeps the calculation exact as fractions:",
+      `${first.n}/${first.d} × ${second.n}/${second.d}`,
+      `= ${result.n}/${result.d}`,
+      "",
+      `Decimal result: ${resultDisplay}`
+    ];
+  }
+
+  const firstNegative =
+    firstText.startsWith("-");
+
+  const secondNegative =
+    secondText.startsWith("-");
+
+  const firstPlaces =
+    countFractionDigits(firstText);
+
+  const secondPlaces =
+    countFractionDigits(secondText);
+
+  const totalPlaces =
+    firstPlaces + secondPlaces;
+
+  const firstDigits =
+    removeDecimalPoint(firstText);
+
+  const secondDigits =
+    removeDecimalPoint(secondText);
+
+  const multiplicand =
+    BigInt(firstDigits);
+
+  const multiplier =
+    BigInt(secondDigits);
+
+  const multiplierDigits =
+    secondDigits.split("").reverse();
+
+  const partials =
+    multiplierDigits.map(
+      (character, position) => {
+        const digit =
+          BigInt(DIGITS.indexOf(character));
+
+        const basicProduct =
+          multiplicand * digit;
+
+        const shiftedProduct =
+          basicProduct *
+          (10n ** BigInt(position));
+
+        return {
+          digit: character,
+          position,
+          basicProduct,
+          shiftedProduct
+        };
+      }
+    );
+
+  const integerProduct =
+    multiplicand * multiplier;
+
+  const integerProductText =
+    integerProduct.toString();
+
+  const negativeResult =
+    firstNegative !== secondNegative &&
+    integerProduct !== 0n;
+
+  const signedIntegerProduct =
+    (negativeResult ? "-" : "") +
+    integerProductText;
+
+  const finalText =
+    insertDecimalPoint(
+      signedIntegerProduct,
+      totalPlaces
+    );
+
+  let width = Math.max(
+    firstText.length,
+    secondText.length + 2,
+    firstDigits.length,
+    secondDigits.length + 2,
+    integerProductText.length,
+    finalText.length
+  );
+
+  partials.forEach(item => {
+    width = Math.max(
+      width,
+      item.shiftedProduct.toString().length
+    );
+  });
+
+  width += 2;
+
+  const lines = [
+    firstText.padStart(width),
+    ("× " + secondText).padStart(width),
+    "─".repeat(width)
+  ];
+
+  if (totalPlaces > 0) {
+    lines.push("");
+    lines.push(
+      "Ignore the decimal points first:"
+    );
+    lines.push("");
+
+    lines.push(
+      firstDigits.padStart(width)
+    );
+
+    lines.push(
+      ("× " + secondDigits).padStart(width)
+    );
+
+    lines.push(
+      "─".repeat(width)
+    );
+  }
+
+  /*
+    Show EVERY partial product.
+
+    Example:
+       123
+      × 45
+      ----
+       615
+      4920
+      ----
+      5535
+  */
+
+  partials.forEach(item => {
+    const partialText =
+      item.basicProduct.toString() +
+      "0".repeat(item.position);
+
+    lines.push(
+      partialText.padStart(width)
+    );
+  });
+
+  if (partials.length > 1) {
+    lines.push(
+      "─".repeat(width)
+    );
+  }
+
+  lines.push(
+    integerProductText.padStart(width)
+  );
+
+  if (totalPlaces > 0) {
+    lines.push("");
+
+    lines.push(
+      `Decimal places: ${firstPlaces} + ${secondPlaces} = ${totalPlaces}`
+    );
+
+    lines.push(
+      `Move the decimal point ${totalPlaces} ` +
+      `${totalPlaces === 1 ? "place" : "places"} ` +
+      "from the right."
+    );
+  }
+
+  lines.push("");
+  lines.push(
+    `Final answer: ${finalText}`
+  );
+
+  return lines;
+}
+
+// =====================================================
 // WRITTEN ARITHMETIC
-// Horizontal line under the operation.
 // =====================================================
 
 function buildWrittenArithmetic(
@@ -675,39 +1025,70 @@ function buildWrittenArithmetic(
   operator,
   result
 ) {
-  const firstText = decimalDescription(first);
-  const secondText = decimalDescription(second);
-  const resultText = decimalDescription(result);
+  const firstText =
+    decimalDescription(first);
 
-  const symbol = operationSymbol(operator);
+  const secondText =
+    decimalDescription(second);
 
-  // Addition and subtraction:
-  // align the decimal points.
-  if (operator === "+" || operator === "-") {
+  const resultText =
+    decimalDescription(result);
+
+  const symbol =
+    operationSymbol(operator);
+
+  // ---------------------------------------------------
+  // ADDITION / SUBTRACTION
+  // ---------------------------------------------------
+
+  if (
+    operator === "+" ||
+    operator === "-"
+  ) {
     const finite =
-      !/[()…]/.test(
-        firstText + secondText + resultText
+      isTerminatingInBase(first, 10) &&
+      isTerminatingInBase(second, 10) &&
+      isTerminatingInBase(result, 10);
+
+    if (!finite) {
+      const width = Math.max(
+        firstText.length,
+        secondText.length + 2,
+        resultText.length
       );
 
-    const places = finite
-      ? Math.max(
-          decimalPlaces(firstText),
-          decimalPlaces(secondText),
-          decimalPlaces(resultText)
-        )
-      : 0;
+      return [
+        firstText.padStart(width),
+        (symbol + " " + secondText)
+          .padStart(width),
+        "─".repeat(width),
+        resultText.padStart(width)
+      ];
+    }
 
-    const left = finite
-      ? padDecimal(firstText, places)
-      : firstText;
+    const exactFirst =
+      exactTerminatingText(first, 10);
 
-    const right = finite
-      ? padDecimal(secondText, places)
-      : secondText;
+    const exactSecond =
+      exactTerminatingText(second, 10);
 
-    const answer = finite
-      ? padDecimal(resultText, places)
-      : resultText;
+    const exactResult =
+      exactTerminatingText(result, 10);
+
+    const places = Math.max(
+      decimalPlaces(exactFirst),
+      decimalPlaces(exactSecond),
+      decimalPlaces(exactResult)
+    );
+
+    const left =
+      padDecimal(exactFirst, places);
+
+    const right =
+      padDecimal(exactSecond, places);
+
+    const answer =
+      padDecimal(exactResult, places);
 
     const width = Math.max(
       left.length,
@@ -717,44 +1098,27 @@ function buildWrittenArithmetic(
 
     return [
       left.padStart(width),
-      (symbol + " " + right).padStart(width),
+      (symbol + " " + right)
+        .padStart(width),
       "─".repeat(width),
       answer.padStart(width)
     ];
   }
 
-  // Multiplication: show the factors and product.
+  // ---------------------------------------------------
+  // MULTIPLICATION
+  // ---------------------------------------------------
+
   if (operator === "*") {
-    const width = Math.max(
-      firstText.length,
-      secondText.length + 2,
-      resultText.length
+    return traditionalMultiplicationLines(
+      first,
+      second,
+      result
     );
-
-    return [
-      firstText.padStart(width),
-      ("× " + secondText).padStart(width),
-      "─".repeat(width),
-      resultText.padStart(width)
-    ];
   }
 
-  // Division: display a long-division-style bracket.
-  if (operator === "/") {
-    const width = Math.max(
-      firstText.length,
-      resultText.length
-    );
-
-    return [
-      " ".repeat(secondText.length + 3) +
-        resultText.padStart(width),
-      " ".repeat(secondText.length + 2) +
-        "─".repeat(width + 1),
-      secondText + " ) " +
-        firstText.padStart(width)
-    ];
-  }
+  // Division is rendered separately using
+  // longDivisionSteps().
 
   return [
     `${firstText} ${symbol} ${secondText}`,
@@ -762,9 +1126,311 @@ function buildWrittenArithmetic(
     resultText
   ];
 }
+// =====================================================
+// IMPROVED LONG DIVISION — BASES 2 TO 36
+// Exact BigInt working.
+// Displays up to 5 fractional digits.
+// =====================================================
+
+function longDivisionSteps(first, second, base) {
+  if (second.n === 0n) {
+    throw new Error("Division by zero is not allowed.");
+  }
+
+  if (
+    !Number.isInteger(base) ||
+    base < 2 ||
+    base > 36
+  ) {
+    throw new Error("Base must be between 2 and 36.");
+  }
+
+  const radix = BigInt(base);
+  const limit = MAX_DIVISION_WORK_DIGITS;
+
+  // (a/b) ÷ (c/d) = (a*d) ÷ (b*c)
+  // Use positive integer magnitudes for working.
+
+  const dividend = absolute(
+    first.n * second.d
+  );
+
+  const divisor = absolute(
+    first.d * second.n
+  );
+
+  const dividendText =
+    dividend.toString(base).toUpperCase();
+
+  const divisorText =
+    divisor.toString(base).toUpperCase();
+
+  const negative =
+    (first.n < 0n) !== (second.n < 0n) &&
+    dividend !== 0n;
+
+  const inputDigits = dividendText.split("");
+  const wholeDigits = [];
+  const operations = [];
+
+  let remainder = 0n;
+  let started = false;
+
+  // ---------------------------------------------------
+  // WHOLE-NUMBER DIVISION
+  // ---------------------------------------------------
+
+  for (let i = 0; i < inputDigits.length; i++) {
+    const digit = BigInt(
+      DIGITS.indexOf(inputDigits[i])
+    );
+
+    const partial =
+      remainder * radix + digit;
+
+    const quotientDigit =
+      partial / divisor;
+
+    const product =
+      quotientDigit * divisor;
+
+    const nextRemainder =
+      partial - product;
+
+    if (
+      quotientDigit !== 0n ||
+      started ||
+      i === inputDigits.length - 1
+    ) {
+      started = true;
+
+      wholeDigits.push(
+        DIGITS[Number(quotientDigit)]
+      );
+
+      operations.push({
+        partial,
+        product,
+        remainder: nextRemainder,
+        endColumn: i,
+        digit: DIGITS[Number(quotientDigit)]
+      });
+    }
+
+    remainder = nextRemainder;
+  }
+
+  // ---------------------------------------------------
+  // FRACTIONAL DIVISION
+  // ---------------------------------------------------
+
+  const fractionDigits = [];
+  const seen = new Map();
+
+  let repeatStart = -1;
+  let truncated = false;
+
+  while (remainder !== 0n) {
+    const key = remainder.toString();
+
+    if (seen.has(key)) {
+      repeatStart = seen.get(key);
+      break;
+    }
+
+    if (fractionDigits.length >= limit) {
+      truncated = true;
+      break;
+    }
+
+    seen.set(key, fractionDigits.length);
+
+    const partial =
+      remainder * radix;
+
+    const quotientDigit =
+      partial / divisor;
+
+    const product =
+      quotientDigit * divisor;
+
+    const nextRemainder =
+      partial - product;
+
+    const digitText =
+      DIGITS[Number(quotientDigit)];
+
+    fractionDigits.push(digitText);
+
+    operations.push({
+      partial,
+      product,
+      remainder: nextRemainder,
+      endColumn:
+        inputDigits.length +
+        fractionDigits.length,
+      digit: digitText
+    });
+
+    remainder = nextRemainder;
+  }
+
+  // ---------------------------------------------------
+  // PREPARE QUOTIENT
+  // ---------------------------------------------------
+
+  let fractionText =
+    fractionDigits.join("");
+
+  if (repeatStart >= 0) {
+    fractionText =
+      fractionText.slice(0, repeatStart) +
+      "(" +
+      fractionText.slice(repeatStart) +
+      ")";
+  } else if (truncated) {
+    fractionText += "…";
+  }
+
+  const quotient =
+    (negative ? "−" : "") +
+    wholeDigits.join("") +
+    (fractionText
+      ? "." + fractionText
+      : "");
+
+  // ---------------------------------------------------
+  // BUILD LONG-DIVISION BRACKET
+  // ---------------------------------------------------
+
+  const workDigits =
+    dividendText +
+    (
+      fractionDigits.length
+        ? "." +
+          "0".repeat(fractionDigits.length)
+        : ""
+    );
+
+  const prefix =
+    " ".repeat(divisorText.length + 3);
+
+  const workWidth = Math.max(
+    workDigits.length,
+    quotient.replace(/[()…]/g, "").length
+  );
+
+  const lines = [
+    prefix + quotient.padStart(workWidth),
+    prefix + "─".repeat(workWidth),
+    divisorText + " │ " + workDigits
+  ];
+
+  // ---------------------------------------------------
+  // SHOW DIVISION WORKING
+  // ---------------------------------------------------
+
+  operations.forEach((item, index) => {
+    const partialText =
+      item.partial
+        .toString(base)
+        .toUpperCase();
+
+    const productText =
+      item.product
+        .toString(base)
+        .toUpperCase();
+
+    const remainderText =
+      item.remainder
+        .toString(base)
+        .toUpperCase();
+
+    const columnWidth = Math.max(
+      partialText.length,
+      productText.length,
+      remainderText.length
+    );
+
+    const start = Math.max(
+      0,
+      item.endColumn - columnWidth + 1
+    );
+
+    const indentation =
+      prefix + " ".repeat(start);
+
+    lines.push(
+      indentation +
+      partialText.padStart(columnWidth)
+    );
+
+    lines.push(
+      indentation +
+      ("−" + productText)
+        .padStart(columnWidth + 1)
+    );
+
+    lines.push(
+      indentation +
+      "─".repeat(columnWidth + 1)
+    );
+
+    lines.push(
+      indentation +
+      remainderText.padStart(columnWidth)
+    );
+
+    if (index < operations.length - 1) {
+      lines.push("");
+    }
+  });
+
+  // ---------------------------------------------------
+  // EXPLANATION
+  // ---------------------------------------------------
+
+  let description =
+    `Divide in Base ${base}. For each quotient digit, ` +
+    "multiply the divisor, subtract the product, " +
+    "and bring down the next digit.";
+
+  if (first.d !== 1n || second.d !== 1n) {
+    description +=
+      " Fractional operands are first rewritten " +
+      "as an equivalent integer division.";
+  }
+
+  let note =
+    `Quotient in Base ${base}: ${quotient}`;
+
+  if (repeatStart >= 0) {
+    note +=
+      " Digits inside parentheses repeat.";
+  }
+
+  if (truncated) {
+    note +=
+      ` Only the first ${limit} fractional digits ` +
+      "are shown in the division working. " +
+      "The division continues beyond this point.";
+  }
+
+  if (negative) {
+    note +=
+      " The negative sign is applied to the quotient.";
+  }
+
+  return paperBlock(
+    `Long Division — Base ${base}`,
+    description,
+    lines,
+    note
+  );
+}
 
 // =====================================================
-// ARITHMETIC SOLUTION BLOCK
+// WRITTEN ARITHMETIC SOLUTION
 // =====================================================
 
 function arithmeticSteps(
@@ -773,45 +1439,68 @@ function arithmeticSteps(
   operator,
   result
 ) {
-  const firstText = decimalDescription(first);
-  const secondText = decimalDescription(second);
-  const resultText = decimalDescription(result);
+  const firstText =
+    decimalDescription(first);
 
-  const lines = buildWrittenArithmetic(
-    first,
-    second,
-    operator,
-    result
-  );
+  const secondText =
+    decimalDescription(second);
+
+  const resultText =
+    decimalDescription(result);
+
+  const lines =
+    buildWrittenArithmetic(
+      first,
+      second,
+      operator,
+      result
+    );
 
   let description = "";
 
   if (operator === "+") {
     description =
-      "Align the decimal points, add each column, and write the answer below the horizontal line.";
+      "Align the decimal points, add each column, " +
+      "and write the answer below the line.";
+
   } else if (operator === "-") {
     description =
-      "Align the decimal points, subtract each column, and write the answer below the horizontal line.";
+      "Align the decimal points, subtract each column, " +
+      "and write the answer below the line.";
+
   } else if (operator === "*") {
     description =
-      "Multiply the decimal values and place the result below the horizontal line.";
+      "Multiply each digit of the second number by the first number. " +
+      "Shift each partial product according to its place value, " +
+      "add the partial products, then place the decimal point " +
+      "in the final answer.";
+
   } else {
     description =
-      "Divide the decimal values. The quotient appears above the division bracket.";
+      "Perform the arithmetic operation.";
   }
 
   let note =
     `${firstText} ${operationSymbol(operator)} ` +
     `${secondText} = ${resultText}`;
 
-  if (resultText.includes("(")) {
+  if (
+    firstText.includes("(") ||
+    secondText.includes("(") ||
+    resultText.includes("(")
+  ) {
     note +=
       ". Digits inside parentheses repeat indefinitely.";
   }
 
-  if (resultText.includes("…")) {
+  if (
+    firstText.includes("…") ||
+    secondText.includes("…") ||
+    resultText.includes("…")
+  ) {
     note +=
-      ". The displayed decimal expansion is truncated.";
+      ". A displayed decimal expansion is truncated; " +
+      "the internal calculation still uses the exact fraction.";
   }
 
   return paperBlock(
@@ -870,7 +1559,10 @@ function buildCalculatorSolution(
     )
   );
 
-  // Only convert to decimal when necessary.
+  // ---------------------------------------------------
+  // CONVERT FIRST INPUT TO DECIMAL
+  // ---------------------------------------------------
+
   if (firstBase !== 10) {
     steps.push(
       positionalSteps(
@@ -880,6 +1572,10 @@ function buildCalculatorSolution(
       )
     );
   }
+
+  // ---------------------------------------------------
+  // CONVERT SECOND INPUT TO DECIMAL
+  // ---------------------------------------------------
 
   if (secondBase !== 10) {
     steps.push(
@@ -891,23 +1587,51 @@ function buildCalculatorSolution(
     );
   }
 
-  // Show written arithmetic using decimal values.
-  steps.push(
-    arithmeticSteps(
-      first,
-      second,
-      operator,
-      result
-    )
-  );
+  // ---------------------------------------------------
+  // ARITHMETIC
+  // ---------------------------------------------------
 
-  // Convert the decimal answer only when
-  // the requested output base is not 10.
+  if (operator === "/") {
+    steps.push(
+      textBlock(
+        "Identify the Division",
+        "Read the dividend and divisor in decimal form.",
+        [
+          `Dividend: ${decimalDescription(first)}`,
+          `Divisor: ${decimalDescription(second)}`,
+          `Decimal answer: ${decimalDescription(result)}`
+        ]
+      )
+    );
+
+    steps.push(
+      longDivisionSteps(
+        first,
+        second,
+        resultBase
+      )
+    );
+
+  } else {
+    steps.push(
+      arithmeticSteps(
+        first,
+        second,
+        operator,
+        result
+      )
+    );
+  }
+
+  // ---------------------------------------------------
+  // CONVERT RESULT TO REQUESTED BASE
+  // ---------------------------------------------------
+
   if (resultBase !== 10) {
     steps.push(
       textBlock(
         "Prepare the Result for Base Conversion",
-        "The arithmetic result is now ready to convert.",
+        "The arithmetic result is ready to convert.",
         [
           `Decimal answer: ${decimalDescription(result)}`,
           `Target base: ${resultBase}`
@@ -922,7 +1646,9 @@ function buildCalculatorSolution(
       )
     );
 
-    if (absolute(result.n) % result.d !== 0n) {
+    if (
+      absolute(result.n) % result.d !== 0n
+    ) {
       steps.push(
         fractionalConversionSteps(
           result,
@@ -956,15 +1682,16 @@ function buildCalculatorSolution(
 function fractionResultNote(formatted, base) {
   if (formatted.repeating) {
     return (
-      `Digits inside parentheses repeat indefinitely ` +
+      "Digits inside parentheses repeat indefinitely " +
       `in Base ${base}.`
     );
   }
 
   if (formatted.truncated) {
     return (
-      `The expansion exceeds ${MAX_FRACTION_DIGITS} ` +
-      `digits and has been truncated.`
+      `The repeating cycle was not detected within ` +
+      `${MAX_FRACTION_DIGITS} fractional digits. ` +
+      "The displayed expansion has been truncated."
     );
   }
 
@@ -982,13 +1709,24 @@ function fractionResultNote(formatted, base) {
 function showError(message) {
   const error = $("errorMessage");
 
-  if (!error) return;
+  if (error) {
+    error.textContent = message;
+    error.hidden = false;
+  }
 
-  error.textContent = message;
-  error.hidden = false;
+  const resultSection =
+    $("resultSection");
 
-  $("resultSection").hidden = true;
-  $("solutionSection").hidden = true;
+  const solutionSection =
+    $("solutionSection");
+
+  if (resultSection) {
+    resultSection.hidden = true;
+  }
+
+  if (solutionSection) {
+    solutionSection.hidden = true;
+  }
 
   stopSolutionPlayback();
 }
@@ -1013,12 +1751,25 @@ function hideResults() {
   clearError();
   stopSolutionPlayback();
 
-  $("resultSection").hidden = true;
-  $("solutionSection").hidden = true;
+  const resultSection =
+    $("resultSection");
+
+  const solutionSection =
+    $("solutionSection");
+
+  if (resultSection) {
+    resultSection.hidden = true;
+  }
+
+  if (solutionSection) {
+    solutionSection.hidden = true;
+  }
 
   currentResult = "";
   currentSolution = [];
   solutionIndex = 0;
+
+  updatePlayButton();
 }
 
 // =====================================================
@@ -1037,7 +1788,10 @@ function showResult(formatted, base, steps) {
     formatted.text;
 
   $("resultNote").textContent =
-    fractionResultNote(formatted, base);
+    fractionResultNote(
+      formatted,
+      base
+    );
 
   $("resultSection").hidden = false;
   $("solutionSection").hidden = true;
@@ -1054,15 +1808,14 @@ function showResult(formatted, base, steps) {
 
 function convertNumber() {
   try {
-    const input = $("convertNumber").value.trim();
+    const input =
+      $("convertNumber").value.trim();
 
-    const fromBase = Number(
-      $("fromBase").value
-    );
+    const fromBase =
+      Number($("fromBase").value);
 
-    const toBase = Number(
-      $("toBase").value
-    );
+    const toBase =
+      Number($("toBase").value);
 
     if (!input) {
       throw new Error(
@@ -1070,24 +1823,26 @@ function convertNumber() {
       );
     }
 
-    const conversion = buildConversionSolution(
-      input,
-      fromBase,
-      toBase
-    );
+    const conversion =
+      buildConversionSolution(
+        input,
+        fromBase,
+        toBase
+      );
 
     showResult(
       conversion.formatted,
       toBase,
       conversion.steps
     );
+
   } catch (error) {
     showError(error.message);
   }
 }
 
 // =====================================================
-// CALCULATE
+// CALCULATE NUMBER
 // =====================================================
 
 function calculateNumber() {
@@ -1104,20 +1859,34 @@ function calculateNumber() {
       );
     }
 
-    const calculation = buildCalculatorSolution(
-      firstInput,
-      Number($("firstBase").value),
-      secondInput,
-      Number($("secondBase").value),
-      $("operator").value,
-      Number($("resultBase").value)
-    );
+    const firstBase =
+      Number($("firstBase").value);
+
+    const secondBase =
+      Number($("secondBase").value);
+
+    const operator =
+      $("operator").value;
+
+    const resultBase =
+      Number($("resultBase").value);
+
+    const calculation =
+      buildCalculatorSolution(
+        firstInput,
+        firstBase,
+        secondInput,
+        secondBase,
+        operator,
+        resultBase
+      );
 
     showResult(
       calculation.formatted,
-      Number($("resultBase").value),
+      resultBase,
       calculation.steps
     );
+
   } catch (error) {
     showError(error.message);
   }
@@ -1172,18 +1941,21 @@ async function copyResult() {
     );
 
     const button = $("copyBtn");
+
+    if (!button) return;
+
     button.textContent = "Copied!";
 
     setTimeout(() => {
       button.textContent = "Copy";
     }, 1800);
+
   } catch (error) {
     showError(
       "Unable to copy automatically."
     );
   }
 }
-
 // =====================================================
 // POPULATE BASE SELECTORS
 // =====================================================
@@ -1233,21 +2005,28 @@ function populateBaseSelectors() {
 function createSolutionLine(text) {
   const line = document.createElement("p");
   line.textContent = String(text);
+
   return line;
 }
 
 function renderSolutionStep() {
   const container = $("solutionSteps");
 
-  if (!container || !currentSolution.length) {
+  if (
+    !container ||
+    !currentSolution.length
+  ) {
     return;
   }
 
-  const step = currentSolution[solutionIndex];
+  const step =
+    currentSolution[solutionIndex];
 
   container.innerHTML = "";
 
-  const heading = document.createElement("h3");
+  const heading =
+    document.createElement("h3");
+
   heading.textContent =
     step.title || "Solution Step";
 
@@ -1263,13 +2042,16 @@ function renderSolutionStep() {
     container.appendChild(description);
   }
 
-  // -----------------------------------------
+  // ---------------------------------------------------
   // TEXT STEP
-  // -----------------------------------------
+  // ---------------------------------------------------
 
   if (step.type === "text") {
-    const lines = document.createElement("div");
-    lines.className = "solution-lines";
+    const lines =
+      document.createElement("div");
+
+    lines.className =
+      "solution-lines";
 
     (step.lines || []).forEach(text => {
       lines.appendChild(
@@ -1280,9 +2062,9 @@ function renderSolutionStep() {
     container.appendChild(lines);
   }
 
-  // -----------------------------------------
+  // ---------------------------------------------------
   // TABLE STEP
-  // -----------------------------------------
+  // ---------------------------------------------------
 
   if (step.type === "table") {
     const wrapper =
@@ -1294,7 +2076,8 @@ function renderSolutionStep() {
     const table =
       document.createElement("table");
 
-    table.className = "solution-table";
+    table.className =
+      "solution-table";
 
     const thead =
       document.createElement("thead");
@@ -1303,8 +2086,11 @@ function renderSolutionStep() {
       document.createElement("tr");
 
     (step.headers || []).forEach(text => {
-      const th = document.createElement("th");
+      const th =
+        document.createElement("th");
+
       th.textContent = String(text);
+
       headerRow.appendChild(th);
     });
 
@@ -1315,11 +2101,16 @@ function renderSolutionStep() {
       document.createElement("tbody");
 
     (step.rows || []).forEach(row => {
-      const tr = document.createElement("tr");
+      const tr =
+        document.createElement("tr");
 
       row.forEach(value => {
-        const td = document.createElement("td");
-        td.textContent = String(value);
+        const td =
+          document.createElement("td");
+
+        td.textContent =
+          String(value);
+
         tr.appendChild(td);
       });
 
@@ -1328,23 +2119,25 @@ function renderSolutionStep() {
 
     table.appendChild(tbody);
     wrapper.appendChild(table);
-
     container.appendChild(wrapper);
 
     if (step.note) {
       const note =
         document.createElement("p");
 
-      note.className = "solution-note";
-      note.textContent = step.note;
+      note.className =
+        "solution-note";
+
+      note.textContent =
+        step.note;
 
       container.appendChild(note);
     }
   }
 
-  // -----------------------------------------
-  // WRITTEN ARITHMETIC STEP
-  // -----------------------------------------
+  // ---------------------------------------------------
+  // WRITTEN ARITHMETIC / LONG DIVISION
+  // ---------------------------------------------------
 
   if (step.type === "paper") {
     const wrapper =
@@ -1353,7 +2146,8 @@ function renderSolutionStep() {
     wrapper.className =
       "baselab-written-math";
 
-    const pre = document.createElement("pre");
+    const pre =
+      document.createElement("pre");
 
     pre.textContent =
       (step.lines || []).join("\n");
@@ -1365,16 +2159,19 @@ function renderSolutionStep() {
       const note =
         document.createElement("p");
 
-      note.className = "solution-note";
-      note.textContent = step.note;
+      note.className =
+        "solution-note";
+
+      note.textContent =
+        step.note;
 
       container.appendChild(note);
     }
   }
 
-  // -----------------------------------------
+  // ---------------------------------------------------
   // FINAL STEP
-  // -----------------------------------------
+  // ---------------------------------------------------
 
   if (step.type === "final") {
     const answer =
@@ -1389,16 +2186,20 @@ function renderSolutionStep() {
     container.appendChild(answer);
   }
 
-  // -----------------------------------------
+  // ---------------------------------------------------
   // PROGRESS INDICATOR
-  // -----------------------------------------
+  // ---------------------------------------------------
 
-  const total = currentSolution.length;
-  const current = solutionIndex + 1;
+  const total =
+    currentSolution.length;
 
-  const percentage = Math.round(
-    (current / total) * 100
-  );
+  const current =
+    solutionIndex + 1;
+
+  const percentage =
+    Math.round(
+      (current / total) * 100
+    );
 
   $("solutionCounter").textContent =
     `Step ${current} of ${total}`;
@@ -1421,10 +2222,15 @@ function renderSolutionStep() {
 // =====================================================
 
 function toggleSolution() {
-  const section = $("solutionSection");
-  const button = $("solutionBtn");
+  const section =
+    $("solutionSection");
 
-  if (!currentSolution.length) return;
+  const button =
+    $("solutionBtn");
+
+  if (!currentSolution.length) {
+    return;
+  }
 
   if (!section.hidden) {
     section.hidden = true;
@@ -1434,6 +2240,7 @@ function toggleSolution() {
 
     stopSolutionPlayback();
     updatePlayButton();
+
     return;
   }
 
@@ -1443,6 +2250,7 @@ function toggleSolution() {
     "Hide Step-by-Step Solution";
 
   solutionIndex = 0;
+
   renderSolutionStep();
 
   section.scrollIntoView({
@@ -1457,10 +2265,13 @@ function toggleSolution() {
 
 function nextSolutionStep() {
   if (
-    solutionIndex < currentSolution.length - 1
+    solutionIndex <
+    currentSolution.length - 1
   ) {
     solutionIndex++;
+
     renderSolutionStep();
+
   } else {
     stopSolutionPlayback();
     updatePlayButton();
@@ -1473,6 +2284,7 @@ function previousSolutionStep() {
 
   if (solutionIndex > 0) {
     solutionIndex--;
+
     renderSolutionStep();
   }
 }
@@ -1482,11 +2294,13 @@ function restartSolution() {
   updatePlayButton();
 
   solutionIndex = 0;
+
   renderSolutionStep();
 }
 
 function updatePlayButton() {
-  const button = $("playStepBtn");
+  const button =
+    $("playStepBtn");
 
   if (!button) return;
 
@@ -1501,35 +2315,44 @@ function updatePlayButton() {
 // =====================================================
 
 function toggleSolutionPlayback() {
-  if (!currentSolution.length) return;
+  if (!currentSolution.length) {
+    return;
+  }
 
   if (solutionTimer !== null) {
     stopSolutionPlayback();
     updatePlayButton();
+
     return;
   }
 
   if (
-    solutionIndex >= currentSolution.length - 1
+    solutionIndex >=
+    currentSolution.length - 1
   ) {
     solutionIndex = 0;
+
     renderSolutionStep();
   }
 
   solutionTimer = setInterval(() => {
     if (
-      solutionIndex >= currentSolution.length - 1
+      solutionIndex >=
+      currentSolution.length - 1
     ) {
       stopSolutionPlayback();
       updatePlayButton();
+
       return;
     }
 
     solutionIndex++;
+
     renderSolutionStep();
 
     if (
-      solutionIndex >= currentSolution.length - 1
+      solutionIndex >=
+      currentSolution.length - 1
     ) {
       stopSolutionPlayback();
       updatePlayButton();
@@ -1544,64 +2367,92 @@ function toggleSolutionPlayback() {
 // =====================================================
 
 function initializeWorkspaceTabs() {
-  document.querySelectorAll(".tab").forEach(button => {
-    button.addEventListener("click", () => {
-      const target = button.dataset.tab;
-      const section = $(target);
+  document
+    .querySelectorAll(".tab")
+    .forEach(button => {
 
-      if (!section) return;
+      button.addEventListener(
+        "click",
+        () => {
+          const target =
+            button.dataset.tab;
 
-      document.querySelectorAll(".tab").forEach(tab => {
-        tab.classList.remove("active");
+          const section =
+            $(target);
 
-        tab.setAttribute(
-          "aria-selected",
-          "false"
-        );
-      });
+          if (!section) return;
 
-      document.querySelectorAll(
-        ".tab-content"
-      ).forEach(item => {
-        item.classList.remove("active");
-      });
+          document
+            .querySelectorAll(".tab")
+            .forEach(tab => {
+              tab.classList.remove(
+                "active"
+              );
 
-      button.classList.add("active");
+              tab.setAttribute(
+                "aria-selected",
+                "false"
+              );
+            });
 
-      button.setAttribute(
-        "aria-selected",
-        "true"
+          document
+            .querySelectorAll(
+              ".tab-content"
+            )
+            .forEach(item => {
+              item.classList.remove(
+                "active"
+              );
+            });
+
+          button.classList.add(
+            "active"
+          );
+
+          button.setAttribute(
+            "aria-selected",
+            "true"
+          );
+
+          section.classList.add(
+            "active"
+          );
+
+          hideResults();
+
+          if (
+            window.innerWidth <= 760
+          ) {
+            section.scrollIntoView({
+              behavior: "smooth",
+              block: "start"
+            });
+          }
+        }
       );
-
-      section.classList.add("active");
-
-      hideResults();
-
-      if (window.innerWidth <= 760) {
-        section.scrollIntoView({
-          behavior: "smooth",
-          block: "start"
-        });
-      }
     });
-  });
 }
 
 // =====================================================
-// MOBILE HAMBURGER NAVIGATION
+// MOBILE NAVIGATION
 // =====================================================
 
 function initializeMobileNavigation() {
-  const toggle = $("mobileMenuToggle");
+  const toggle =
+    $("mobileMenuToggle");
 
   const menu =
     $("mobileNavigation") ||
     $("mobileMenuContent");
 
-  if (!toggle || !menu) return;
+  if (!toggle || !menu) {
+    return;
+  }
 
   function closeMenu() {
-    menu.classList.remove("is-open");
+    menu.classList.remove(
+      "is-open"
+    );
 
     toggle.setAttribute(
       "aria-expanded",
@@ -1614,52 +2465,75 @@ function initializeMobileNavigation() {
     );
   }
 
-  toggle.addEventListener("click", () => {
-    const open =
-      menu.classList.toggle("is-open");
+  toggle.addEventListener(
+    "click",
+    () => {
+      const open =
+        menu.classList.toggle(
+          "is-open"
+        );
 
-    toggle.setAttribute(
-      "aria-expanded",
-      String(open)
-    );
+      toggle.setAttribute(
+        "aria-expanded",
+        String(open)
+      );
 
-    toggle.setAttribute(
-      "aria-label",
-      open
-        ? "Close navigation menu"
-        : "Open navigation menu"
-    );
-  });
+      toggle.setAttribute(
+        "aria-label",
+        open
+          ? "Close navigation menu"
+          : "Open navigation menu"
+      );
+    }
+  );
 
-  menu.querySelectorAll(".tab").forEach(button => {
-    button.addEventListener("click", () => {
-      if (window.innerWidth <= 760) {
+  menu
+    .querySelectorAll(".tab")
+    .forEach(button => {
+      button.addEventListener(
+        "click",
+        () => {
+          if (
+            window.innerWidth <= 760
+          ) {
+            closeMenu();
+          }
+        }
+      );
+    });
+
+  document.addEventListener(
+    "keydown",
+    event => {
+      if (event.key === "Escape") {
         closeMenu();
       }
-    });
-  });
-
-  document.addEventListener("keydown", event => {
-    if (event.key === "Escape") {
-      closeMenu();
     }
-  });
+  );
 
-  document.addEventListener("click", event => {
-    if (
-      window.innerWidth <= 760 &&
-      !menu.contains(event.target) &&
-      !toggle.contains(event.target)
-    ) {
-      closeMenu();
+  document.addEventListener(
+    "click",
+    event => {
+      if (
+        window.innerWidth <= 760 &&
+        !menu.contains(event.target) &&
+        !toggle.contains(event.target)
+      ) {
+        closeMenu();
+      }
     }
-  });
+  );
 
-  window.addEventListener("resize", () => {
-    if (window.innerWidth > 760) {
-      closeMenu();
+  window.addEventListener(
+    "resize",
+    () => {
+      if (
+        window.innerWidth > 760
+      ) {
+        closeMenu();
+      }
     }
-  });
+  );
 }
 
 // =====================================================
@@ -1706,12 +2580,18 @@ function initializeCalculatorControls() {
     }
   );
 
-  ["firstNumber", "secondNumber"].forEach(id => {
-    $(id).addEventListener("keydown", event => {
-      if (event.key === "Enter") {
-        calculateNumber();
+  [
+    "firstNumber",
+    "secondNumber"
+  ].forEach(id => {
+    $(id).addEventListener(
+      "keydown",
+      event => {
+        if (event.key === "Enter") {
+          calculateNumber();
+        }
       }
-    });
+    );
   });
 
   $("solutionBtn").addEventListener(
@@ -1724,6 +2604,7 @@ function initializeCalculatorControls() {
     () => {
       stopSolutionPlayback();
       updatePlayButton();
+
       nextSolutionStep();
     }
   );
@@ -1745,17 +2626,20 @@ function initializeCalculatorControls() {
 }
 
 // =====================================================
-// STYLING FOR WRITTEN ARITHMETIC
-// Injected automatically by JavaScript.
-// No separate CSS edit required.
+// WRITTEN ARITHMETIC STYLING
+// Automatically added by JavaScript.
 // =====================================================
 
 function initializeWrittenMathStyles() {
-  if ($("baselabWrittenMathStyles")) return;
+  if ($("baselabWrittenMathStyles")) {
+    return;
+  }
 
-  const style = document.createElement("style");
+  const style =
+    document.createElement("style");
 
-  style.id = "baselabWrittenMathStyles";
+  style.id =
+    "baselabWrittenMathStyles";
 
   style.textContent = `
     .baselab-written-math {
@@ -1765,7 +2649,7 @@ function initializeWrittenMathStyles() {
       border: 1px solid #e4e1ff;
       border-radius: 14px;
       overflow-x: auto;
-      text-align: center;
+      text-align: left;
     }
 
     .baselab-written-math pre {
@@ -1773,14 +2657,18 @@ function initializeWrittenMathStyles() {
       margin: 0;
       padding: 0;
       color: #263254;
-      font-family: "Courier New", monospace;
-      font-size: 20px;
+      font-family:
+        "Courier New",
+        Consolas,
+        monospace;
+      font-size: 17px;
       font-weight: 700;
-      line-height: 1.8;
+      line-height: 1.65;
       letter-spacing: 0;
-      text-align: right;
+      text-align: left;
       white-space: pre;
-      font-variant-numeric: tabular-nums;
+      font-variant-numeric:
+        tabular-nums;
     }
 
     @media (max-width: 760px) {
@@ -1802,14 +2690,13 @@ function initializeWrittenMathStyles() {
 // INITIALIZE BASELAB
 // =====================================================
 
-document.addEventListener("DOMContentLoaded", () => {
-  populateBaseSelectors();
-
-  initializeCalculatorControls();
-
-  initializeWorkspaceTabs();
-
-  initializeMobileNavigation();
-
-  initializeWrittenMathStyles();
-});
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+    populateBaseSelectors();
+    initializeCalculatorControls();
+    initializeWorkspaceTabs();
+    initializeMobileNavigation();
+    initializeWrittenMathStyles();
+  }
+);
