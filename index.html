@@ -1,20 +1,30 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>BaseLab | Number System Studio</title>
-  <meta name="description" content="Convert and calculate numbers across bases 2 to 36 with interactive step-by-step solutions.">
+
+  <meta
+    name="description"
+    content="Convert and calculate numbers across bases 2 to 36 with interactive step-by-step solutions."
+  >
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
 
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
 
+  <!-- QUICK REFERENCE STYLES ONLY -->
   <style>
     .base-reference .reference-button {
       width: 100%;
@@ -121,83 +131,18 @@
     .reference-example p {
       margin-bottom: 0;
     }
-
-    /* Desktop keeps its existing heading and layout. */
-    .hero-mobile-title,
-    .hero-mobile-description {
-      display: none;
-    }
-
-    /* These rules ensure the menu works with the HTML below. */
-    .mobile-menu-toggle {
-      display: none;
-    }
-
-    .mobile-navigation {
-      display: contents;
-    }
-
-    @media (max-width: 760px) {
-      .mobile-menu-toggle {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        gap: 4px;
-        width: 40px;
-        height: 40px;
-        margin-left: auto;
-        padding: 9px;
-        border: 1px solid #e7e5f3;
-        border-radius: 10px;
-        background: #f7f6ff;
-        cursor: pointer;
-      }
-
-      .mobile-menu-toggle span {
-        display: block;
-        width: 19px;
-        height: 2px;
-        border-radius: 2px;
-        background: #5147e8;
-      }
-
-      .mobile-navigation {
-        display: none;
-        width: 100%;
-        padding-top: 14px;
-      }
-
-      .mobile-navigation.is-open {
-        display: block;
-      }
-
-      .hero-desktop-title,
-      .hero-desktop-description {
-        display: none !important;
-      }
-
-      .hero-mobile-title {
-        display: block !important;
-      }
-
-      .hero-mobile-description {
-        display: block !important;
-      }
-
-      .sidebar-brand {
-        width: 100%;
-        display: flex;
-        align-items: center;
-      }
-    }
   </style>
+
 </head>
 
 <body>
+
   <div class="dashboard-shell">
 
-    <!-- SIDEBAR / MOBILE HEADER -->
+    <!-- ===================================== -->
+    <!-- SIDEBAR -->
+    <!-- ===================================== -->
+
     <aside class="sidebar">
 
       <div class="sidebar-brand">
@@ -207,163 +152,164 @@
           <strong>BaseLab</strong>
           <small>NUMBER SYSTEM STUDIO</small>
         </div>
+      </div>
+
+      <div class="sidebar-section-label">
+        WORKSPACE
+      </div>
+
+      <nav class="sidebar-nav tabs" aria-label="Calculator modes">
 
         <button
           type="button"
-          id="mobileMenuToggle"
-          class="mobile-menu-toggle"
-          aria-label="Open navigation menu"
-          aria-expanded="false"
-          aria-controls="mobileNavigation"
+          class="tab nav-item active"
+          data-tab="converter"
         >
-          <span></span>
-          <span></span>
-          <span></span>
+          <span class="nav-icon">⇄</span>
+          <span>Base Converter</span>
         </button>
+
+        <button
+          type="button"
+          class="tab nav-item"
+          data-tab="calculator"
+        >
+          <span class="nav-icon">⊞</span>
+          <span>Base Calculator</span>
+        </button>
+
+      </nav>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-section-label">
+        QUICK REFERENCE
       </div>
 
-      <!-- Collapsible on mobile; visible on desktop -->
-      <div id="mobileNavigation" class="mobile-navigation">
+      <!-- ===================================== -->
+      <!-- INTERACTIVE QUICK REFERENCE -->
+      <!-- ===================================== -->
 
-        <div class="sidebar-section-label">
-          WORKSPACE
-        </div>
+      <div class="base-reference">
 
-        <nav class="sidebar-nav tabs" aria-label="Calculator modes">
-          <button
-            type="button"
-            class="tab nav-item active"
-            data-tab="converter"
-            aria-selected="true"
-          >
-            <span class="nav-icon">⇄</span>
-            <span>Base Converter</span>
-          </button>
+        <button
+          type="button"
+          class="reference-item reference-button"
+          data-reference="binary"
+          aria-expanded="false"
+          aria-controls="referenceDetails"
+        >
+          <span class="reference-symbol">01</span>
 
-          <button
-            type="button"
-            class="tab nav-item"
-            data-tab="calculator"
-            aria-selected="false"
-          >
-            <span class="nav-icon">⊞</span>
-            <span>Base Calculator</span>
-          </button>
-        </nav>
+          <span class="reference-label">
+            <strong>Binary</strong>
+            <small>Base 2</small>
+          </span>
 
-        <div class="sidebar-divider"></div>
+          <span class="reference-arrow">›</span>
+        </button>
 
-        <div class="sidebar-section-label">
-          QUICK REFERENCE
-        </div>
+        <button
+          type="button"
+          class="reference-item reference-button"
+          data-reference="octal"
+          aria-expanded="false"
+          aria-controls="referenceDetails"
+        >
+          <span class="reference-symbol">07</span>
 
-        <div class="base-reference">
+          <span class="reference-label">
+            <strong>Octal</strong>
+            <small>Base 8</small>
+          </span>
 
-          <button
-            type="button"
-            class="reference-item reference-button"
-            data-reference="binary"
-            aria-expanded="false"
-            aria-controls="referenceDetails"
-          >
-            <span class="reference-symbol">01</span>
-            <span class="reference-label">
-              <strong>Binary</strong>
-              <small>Base 2</small>
-            </span>
-            <span class="reference-arrow">›</span>
-          </button>
+          <span class="reference-arrow">›</span>
+        </button>
 
-          <button
-            type="button"
-            class="reference-item reference-button"
-            data-reference="octal"
-            aria-expanded="false"
-            aria-controls="referenceDetails"
-          >
-            <span class="reference-symbol">07</span>
-            <span class="reference-label">
-              <strong>Octal</strong>
-              <small>Base 8</small>
-            </span>
-            <span class="reference-arrow">›</span>
-          </button>
+        <button
+          type="button"
+          class="reference-item reference-button"
+          data-reference="decimal"
+          aria-expanded="false"
+          aria-controls="referenceDetails"
+        >
+          <span class="reference-symbol">09</span>
 
-          <button
-            type="button"
-            class="reference-item reference-button"
-            data-reference="decimal"
-            aria-expanded="false"
-            aria-controls="referenceDetails"
-          >
-            <span class="reference-symbol">09</span>
-            <span class="reference-label">
-              <strong>Decimal</strong>
-              <small>Base 10</small>
-            </span>
-            <span class="reference-arrow">›</span>
-          </button>
+          <span class="reference-label">
+            <strong>Decimal</strong>
+            <small>Base 10</small>
+          </span>
 
-          <button
-            type="button"
-            class="reference-item reference-button"
-            data-reference="hexadecimal"
-            aria-expanded="false"
-            aria-controls="referenceDetails"
-          >
-            <span class="reference-symbol">AF</span>
-            <span class="reference-label">
-              <strong>Hexadecimal</strong>
-              <small>Base 16</small>
-            </span>
-            <span class="reference-arrow">›</span>
-          </button>
+          <span class="reference-arrow">›</span>
+        </button>
 
-          <!-- Interactive reference information -->
-          <div
-            id="referenceDetails"
-            class="reference-details"
-            aria-live="polite"
-            hidden
-          >
-            <div class="reference-details-header">
-              <strong id="referenceTitle"></strong>
+        <button
+          type="button"
+          class="reference-item reference-button"
+          data-reference="hexadecimal"
+          aria-expanded="false"
+          aria-controls="referenceDetails"
+        >
+          <span class="reference-symbol">AF</span>
 
-              <button
-                type="button"
-                id="referenceClose"
-                aria-label="Close quick reference"
-              >
-                ×
-              </button>
-            </div>
+          <span class="reference-label">
+            <strong>Hexadecimal</strong>
+            <small>Base 16</small>
+          </span>
 
-            <p id="referenceDescription"></p>
+          <span class="reference-arrow">›</span>
+        </button>
 
-            <p>
-              <b>Valid digits:</b>
-              <span id="referenceDigits"></span>
-            </p>
+        <!-- Information panel -->
 
-            <p>
-              <b>Place values:</b>
-              <span id="referencePlaces"></span>
-            </p>
+        <div
+          id="referenceDetails"
+          class="reference-details"
+          aria-live="polite"
+          hidden
+        >
 
-            <div class="reference-example">
-              <small>EXAMPLE</small>
-              <strong id="referenceExample"></strong>
-              <p id="referenceExplanation"></p>
-            </div>
+          <div class="reference-details-header">
+            <strong id="referenceTitle"></strong>
+
+            <button
+              type="button"
+              id="referenceClose"
+              aria-label="Close quick reference"
+            >
+              ×
+            </button>
+          </div>
+
+          <p id="referenceDescription"></p>
+
+          <p>
+            <b>Valid digits:</b>
+            <span id="referenceDigits"></span>
+          </p>
+
+          <p>
+            <b>Place values:</b>
+            <span id="referencePlaces"></span>
+          </p>
+
+          <div class="reference-example">
+            <small>EXAMPLE</small>
+
+            <strong id="referenceExample"></strong>
+
+            <p id="referenceExplanation"></p>
           </div>
 
         </div>
+
       </div>
 
-      <!-- Desktop sidebar footer -->
       <div class="sidebar-bottom">
+
         <div class="sidebar-info-card">
           <span class="info-icon">✦</span>
+
           <strong>Learn as you calculate</strong>
 
           <p>
@@ -376,14 +322,21 @@
           <span class="status-dot"></span>
           All systems ready
         </div>
+
       </div>
 
     </aside>
 
+    <!-- ===================================== -->
     <!-- MAIN DASHBOARD -->
+    <!-- ===================================== -->
+
     <main class="dashboard-main">
 
+      <!-- TOP BAR -->
+
       <header class="topbar">
+
         <div class="topbar-left">
           <span class="breadcrumb">Workspace</span>
           <span class="breadcrumb-separator">/</span>
@@ -396,35 +349,32 @@
             Base 2–36 Supported
           </span>
         </div>
+
       </header>
+
+      <!-- DASHBOARD CONTENT -->
 
       <div class="dashboard-content">
 
-        <!-- PURPLE HERO BANNER -->
+        <!-- HERO -->
+
         <section class="hero">
 
           <div class="hero-content">
+
             <span class="hero-eyebrow">
               ✦ YOUR MATHEMATICAL WORKSPACE
             </span>
 
-            <h1 class="hero-desktop-title">
+            <h1>
               Explore numbers.
               <span>Master every base.</span>
             </h1>
 
-            <h1 class="hero-mobile-title">
-              Explore Every Base.
-            </h1>
-
-            <p class="hero-desktop-description">
+            <p>
               Convert number systems, perform precise
               calculations, and understand every step
               with BaseLab.
-            </p>
-
-            <p class="hero-mobile-description">
-              Convert, calculate, and learn across bases 2–36.
             </p>
 
             <div class="hero-features">
@@ -432,10 +382,11 @@
               <span>✓ Fractional Conversion</span>
               <span>✓ Step-by-Step Solutions</span>
             </div>
+
           </div>
 
-          <!-- Preserve orbit animation elements -->
           <div class="hero-decoration" aria-hidden="true">
+
             <div class="floating-number number-one">
               101101
             </div>
@@ -450,16 +401,20 @@
 
             <div class="hero-orbit orbit-one"></div>
             <div class="hero-orbit orbit-two"></div>
+
             <div class="hero-center-symbol">∞</div>
+
           </div>
 
         </section>
 
-        <!-- STATISTICS -->
+        <!-- STATS -->
+
         <section class="stats-grid" aria-label="BaseLab features">
 
           <div class="stat-card">
             <div class="stat-icon purple">⌗</div>
+
             <div>
               <span class="stat-value">35</span>
               <span class="stat-label">Available Bases</span>
@@ -468,6 +423,7 @@
 
           <div class="stat-card">
             <div class="stat-icon blue">÷</div>
+
             <div>
               <span class="stat-value">4</span>
               <span class="stat-label">Math Operations</span>
@@ -476,6 +432,7 @@
 
           <div class="stat-card">
             <div class="stat-icon violet">∞</div>
+
             <div>
               <span class="stat-value">Exact</span>
               <span class="stat-label">Fraction Detection</span>
@@ -484,14 +441,19 @@
 
         </section>
 
-        <!-- BASE CONVERTER -->
+        <!-- ================================= -->
+        <!-- CONVERTER -->
+        <!-- ================================= -->
+
         <section
           id="converter"
           class="tab-content active workspace-card"
         >
 
           <div class="workspace-header">
+
             <div class="workspace-heading">
+
               <div class="section-icon">⇄</div>
 
               <div>
@@ -506,16 +468,19 @@
                   bases 2 and 36.
                 </p>
               </div>
+
             </div>
 
             <span class="workspace-tag">
               Converter
             </span>
+
           </div>
 
           <div class="workspace-body">
 
             <div class="input-group">
+
               <label for="convertNumber">
                 Number to Convert
               </label>
@@ -535,36 +500,39 @@
               <span class="field-hint">
                 Supports integers and fractional numbers.
               </span>
+
             </div>
 
             <div class="base-grid">
 
               <div class="input-group">
+
                 <label for="fromBase">
                   From Base
                 </label>
 
                 <select id="fromBase"></select>
+
               </div>
 
-              <div
-                class="base-direction-icon"
-                aria-hidden="true"
-              >
+              <div class="base-direction-icon" aria-hidden="true">
                 →
               </div>
 
               <div class="input-group">
+
                 <label for="toBase">
                   To Base
                 </label>
 
                 <select id="toBase"></select>
+
               </div>
 
             </div>
 
             <div class="button-group">
+
               <button
                 type="button"
                 id="convertBtn"
@@ -589,19 +557,26 @@
               >
                 Reset
               </button>
+
             </div>
 
           </div>
+
         </section>
 
-        <!-- BASE CALCULATOR -->
+        <!-- ================================= -->
+        <!-- CALCULATOR -->
+        <!-- ================================= -->
+
         <section
           id="calculator"
           class="tab-content workspace-card"
         >
 
           <div class="workspace-header">
+
             <div class="workspace-heading">
+
               <div class="section-icon">⊞</div>
 
               <div>
@@ -616,11 +591,13 @@
                   across different number systems.
                 </p>
               </div>
+
             </div>
 
             <span class="workspace-tag">
               Calculator
             </span>
+
           </div>
 
           <div class="workspace-body">
@@ -628,6 +605,7 @@
             <div class="calculator-input-grid">
 
               <div class="input-group">
+
                 <label for="firstNumber">
                   First Number
                 </label>
@@ -644,9 +622,11 @@
                   id="firstBase"
                   aria-label="First number base"
                 ></select>
+
               </div>
 
               <div class="input-group">
+
                 <label for="secondNumber">
                   Second Number
                 </label>
@@ -663,6 +643,7 @@
                   id="secondBase"
                   aria-label="Second number base"
                 ></select>
+
               </div>
 
             </div>
@@ -670,6 +651,7 @@
             <div class="calculator-settings">
 
               <div class="input-group">
+
                 <label for="operator">
                   Mathematical Operation
                 </label>
@@ -680,19 +662,23 @@
                   <option value="*">Multiplication (×)</option>
                   <option value="/">Division (÷)</option>
                 </select>
+
               </div>
 
               <div class="input-group">
+
                 <label for="resultBase">
                   Result Base
                 </label>
 
                 <select id="resultBase"></select>
+
               </div>
 
             </div>
 
             <div class="button-group">
+
               <button
                 type="button"
                 id="calculateBtn"
@@ -709,12 +695,17 @@
               >
                 Reset
               </button>
+
             </div>
 
           </div>
+
         </section>
 
+        <!-- ================================= -->
         <!-- ERROR MESSAGE -->
+        <!-- ================================= -->
+
         <div
           id="errorMessage"
           class="error-message"
@@ -722,7 +713,10 @@
           hidden
         ></div>
 
+        <!-- ================================= -->
         <!-- CALCULATION RESULT -->
+        <!-- ================================= -->
+
         <section
           class="result-card"
           id="resultSection"
@@ -730,6 +724,7 @@
         >
 
           <div class="result-header">
+
             <div>
               <span class="section-eyebrow">
                 CONVERSION OUTPUT
@@ -745,23 +740,20 @@
             >
               Copy
             </button>
+
           </div>
 
           <div class="result-display">
+
             <span class="result-display-label">
               YOUR RESULT
             </span>
 
-            <div
-              id="resultNumber"
-              class="result-number"
-            ></div>
+            <div id="resultNumber" class="result-number"></div>
+
           </div>
 
-          <p
-            id="resultNote"
-            class="result-note"
-          ></p>
+          <p id="resultNote" class="result-note"></p>
 
           <button
             type="button"
@@ -773,7 +765,10 @@
 
         </section>
 
+        <!-- ================================= -->
         <!-- STEP-BY-STEP SOLUTION -->
+        <!-- ================================= -->
+
         <section
           class="solution-card"
           id="solutionSection"
@@ -781,7 +776,9 @@
         >
 
           <div class="solution-heading">
+
             <div>
+
               <span class="section-eyebrow">
                 LEARNING MODE
               </span>
@@ -792,14 +789,17 @@
                 Follow the mathematical process,
                 one step at a time.
               </p>
+
             </div>
 
             <span class="solution-badge">
               ● Interactive
             </span>
+
           </div>
 
           <div class="solution-progress-info">
+
             <span id="solutionCounter">
               Step 1
             </span>
@@ -807,19 +807,19 @@
             <span id="solutionPercent">
               0%
             </span>
+
           </div>
 
           <div class="solution-progress">
+
             <div
               id="solutionProgressFill"
               class="solution-progress-fill"
             ></div>
+
           </div>
 
-          <div
-            id="solutionSteps"
-            aria-live="polite"
-          ></div>
+          <div id="solutionSteps" aria-live="polite"></div>
 
           <div class="solution-controls">
 
@@ -860,7 +860,9 @@
         </section>
 
         <!-- FOOTER -->
+
         <footer class="dashboard-footer">
+
           <p>
             © BaseLab — Number System Studio
           </p>
@@ -868,16 +870,22 @@
           <span>
             Built for learning and exploration ✦
           </span>
+
         </footer>
 
       </div>
+
     </main>
 
   </div>
 
+  <!-- ===================================== -->
   <!-- QUICK REFERENCE INTERACTIVITY -->
+  <!-- ===================================== -->
+
   <script>
     document.addEventListener("DOMContentLoaded", function () {
+
       const references = {
         binary: {
           title: "Binary — Base 2",
@@ -917,7 +925,10 @@
       };
 
       const panel = document.getElementById("referenceDetails");
-      const buttons = document.querySelectorAll(".reference-button");
+
+      const buttons = document.querySelectorAll(
+        ".reference-button"
+      );
 
       function closeReference() {
         panel.hidden = true;
@@ -928,7 +939,9 @@
       }
 
       buttons.forEach(button => {
+
         button.addEventListener("click", function () {
+
           const alreadyOpen =
             button.getAttribute("aria-expanded") === "true";
 
@@ -965,11 +978,14 @@
           });
 
           panel.hidden = false;
+
         });
+
       });
 
       document.getElementById("referenceClose")
         .addEventListener("click", closeReference);
+
     });
   </script>
 

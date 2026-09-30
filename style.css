@@ -3174,27 +3174,3 @@ select:focus-visible,
   .floating-number.number-two, .floating-number.number-three { --orbit-radius: 67.5px; }
   .stat-label { font-size: 8px; }
 }
-@media (max-width: 760px) {
-
-  .sidebar-brand {
-    position: relative;
-    z-index: 1001;
-  }
-
-  .mobile-menu-toggle {
-    position: relative;
-    z-index: 1002;
-    pointer-events: auto !important;
-    touch-action: manipulation;
-  }
-
-  .mobile-menu-toggle span {
-    pointer-events: none;
-  }
-
-  .mobile-navigation {
-    position: relative;
-    z-index: 1000;
-  }
-
-}
