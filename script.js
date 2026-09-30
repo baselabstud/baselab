@@ -2203,3 +2203,110 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeMobileNavigation();
   initializeWrittenMathStyles();
 });
+// =====================================================
+// MOBILE HAMBURGER NAVIGATION
+// =====================================================
+
+function initializeMobileNavigation() {
+  const toggle =
+    document.getElementById(
+      "mobileMenuToggle"
+    );
+
+  const navigation =
+    document.getElementById(
+      "mobileNavigation"
+    );
+
+  if (
+    !toggle ||
+    !navigation
+  ) {
+    return;
+  }
+
+  function setMenuState(open) {
+    navigation.classList.toggle(
+      "is-open",
+      open
+    );
+
+    toggle.setAttribute(
+      "aria-expanded",
+      String(open)
+    );
+
+    toggle.setAttribute(
+      "aria-label",
+      open
+        ? "Close navigation menu"
+        : "Open navigation menu"
+    );
+  }
+
+  toggle.addEventListener(
+    "click",
+    () => {
+      const currentlyOpen =
+        navigation.classList.contains(
+          "is-open"
+        );
+
+      setMenuState(
+        !currentlyOpen
+      );
+    }
+  );
+
+  navigation
+    .querySelectorAll(
+      ".tab"
+    )
+    .forEach(
+      button => {
+        button.addEventListener(
+          "click",
+          () => {
+            if (
+              window.innerWidth <=
+              760
+            ) {
+              setMenuState(
+                false
+              );
+            }
+          }
+        );
+      }
+    );
+
+  window.addEventListener(
+    "resize",
+    () => {
+      if (
+        window.innerWidth >
+        760
+      ) {
+        setMenuState(
+          false
+        );
+      }
+    }
+  );
+}
+
+
+// Start mobile navigation after HTML loads.
+
+if (
+  document.readyState ===
+  "loading"
+) {
+  document.addEventListener(
+    "DOMContentLoaded",
+    initializeMobileNavigation
+  );
+
+} else {
+  initializeMobileNavigation();
+}
